@@ -104,7 +104,7 @@ public sealed class OpaqueQueryStore(Func<DateTimeOffset> timestamps) : IQuerySt
     private static void WriteSorting(BinaryWriter bw, ResourceQuery query)
     {
         bw.Write(query.Sorting.Count);
-        foreach (var (propertyInfo, name, sortDirection) in query.Sorting!)
+        foreach (var (propertyInfo, name, sortDirection) in query.Sorting)
         {
             if (!bw.WriteBoolean(propertyInfo != null))
                 continue;
@@ -146,7 +146,6 @@ public sealed class OpaqueQueryStore(Func<DateTimeOffset> timestamps) : IQuerySt
                 Item2 = name,
                 Item3 = direction
             };
-            query.Sorting ??= [];
             query.Sorting.Add(sorting);
         }
     }
@@ -154,8 +153,8 @@ public sealed class OpaqueQueryStore(Func<DateTimeOffset> timestamps) : IQuerySt
     private static void WriteProjections(BinaryWriter bw, ResourceQuery query)
     {
         bw.Write(query.Projection.Count);
-        foreach (var projection in query.Projection!)
-            WriteProjectPath(bw, projection);
+        foreach (var projection in query.Projection)
+            WriteProjectionPath(bw, projection);
     }
 
     private static void ReadProjections(BinaryReader br, ResourceQuery query)
@@ -163,12 +162,10 @@ public sealed class OpaqueQueryStore(Func<DateTimeOffset> timestamps) : IQuerySt
         var projectionCount = br.ReadInt32();
         query.Projection = new List<ProjectionPath>(projectionCount);
         for (var i = 0; i < projectionCount; i++)
-        {
-            ReadProjection(br);
-        }
+            ReadProjectionPath(br);
     }
 
-    private static void WriteProjectPath(BinaryWriter bw, ProjectionPath projection)
+    private static void WriteProjectionPath(BinaryWriter bw, ProjectionPath projection)
     {
         while (true)
         {
@@ -184,7 +181,7 @@ public sealed class OpaqueQueryStore(Func<DateTimeOffset> timestamps) : IQuerySt
         }
     }
 
-    private static ProjectionPath ReadProjection(BinaryReader br)
+    private static ProjectionPath ReadProjectionPath(BinaryReader br)
     {
         var projection = new ProjectionPath();
         var typeName = br.ReadNullableString();
@@ -193,7 +190,7 @@ public sealed class OpaqueQueryStore(Func<DateTimeOffset> timestamps) : IQuerySt
 
         projection.Name = br.ReadNullableString();
         if (br.ReadBoolean())
-            projection.Next = ReadProjection(br);
+            projection.Next = ReadProjectionPath(br);
 
         return projection;
     }
@@ -224,7 +221,7 @@ public sealed class OpaqueQueryStore(Func<DateTimeOffset> timestamps) : IQuerySt
     private static void WriteSearch(BinaryWriter bw, ResourceQuery query)
     {
         bw.Write(query.Search.Count);
-        foreach (var (column, predicate) in query.Search!)
+        foreach (var (column, predicate) in query.Search)
         {
             bw.WriteNullableString(column);
             bw.WriteNullableString(predicate);
@@ -248,7 +245,6 @@ public sealed class OpaqueQueryStore(Func<DateTimeOffset> timestamps) : IQuerySt
                 Item2 = predicate
             };
 
-            query.Search ??= [];
             query.Search.Add(search);
         }
     }

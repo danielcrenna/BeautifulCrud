@@ -1,5 +1,8 @@
+using System.Runtime.CompilerServices;
 using BeautifulCrud;
 using BeautifulCrud.AspNetCore;
+
+[assembly: InternalsVisibleTo("BeautifulCrud.IntegrationTests")]
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,3 +28,5 @@ app.UseBeautifulCrud();
 app.UseAuthorization();
 app.MapControllers();
 app.Run();
+
+public partial class Program; // this is here to support in-memory API testing

@@ -4,6 +4,7 @@ using BeautifulCrud.AspNetCore.OpenApi;
 using BeautifulCrud.AspNetCore.Serialization;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -11,7 +12,9 @@ namespace BeautifulCrud.AspNetCore;
 
 public static class ServiceCollectionExtensions
 {
-	public static IServiceCollection AddBeautifulCrud(this IServiceCollection services, Action<CrudOptions>? configureAction)
+    public static IServiceCollection AddBeautifulCrud(this IServiceCollection services, IConfiguration configuration) => services.AddBeautifulCrud(configuration.Bind);
+
+    public static IServiceCollection AddBeautifulCrud(this IServiceCollection services, Action<CrudOptions>? configureAction)
     {
         services.Configure<CrudOptions>(o =>
         {

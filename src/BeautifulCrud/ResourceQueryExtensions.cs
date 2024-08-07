@@ -339,6 +339,9 @@ public static class ResourceQueryExtensions
 		{
 			if (maxPageSizeClause.Count > 0)
 			{
+				// Clients MAY request server-driven paging with a specific page size by specifying a $maxpagesize preference.
+                // The server SHOULD honor this preference if the specified page size is smaller than the server's default page size.
+				
 				var maxPageSize = options.DefaultPageSize;
 
 				if (maxPageSizeClause.Count == 1 && int.TryParse(maxPageSizeClause[0], out var pageSize) && pageSize < maxPageSize)
@@ -368,8 +371,8 @@ public static class ResourceQueryExtensions
 				// supported by the server, the expected response would be the number of results specified by the client,
 				// paginated as specified by the server paging settings."
 				//
-				if (pageSize > options.MaxPageSize)
-					pageSize = options.MaxPageSize;
+				if (pageSize > options.DefaultPageSize)
+					pageSize = options.DefaultPageSize;
 
 				query.Paging.PageSize = pageSize;
 			}
@@ -389,10 +392,6 @@ public static class ResourceQueryExtensions
         query.Paging.PageSize ??= query.Paging.MaxPageSize < options.DefaultPageSize
             ? query.Paging.MaxPageSize.Value
             : options.DefaultPageSize;
-
-		// If we still don't have a page size, assume the query is for the default page size
-		if (query.Paging.PageSize is null or 0)
-			query.Paging.PageSize = options.DefaultPageSize;
 	}
 
 	#endregion

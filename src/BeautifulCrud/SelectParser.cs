@@ -24,7 +24,7 @@ internal static class SelectParser
             ProcessPath(property, propertyAccess, path.Next);
         }
 
-        foreach (var path in nestedPaths)
+        foreach (var path in nestedPaths) 
         {
             var property = typeof(T).GetProperty(path.Name!, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
             if (property == null)
@@ -42,7 +42,6 @@ internal static class SelectParser
 	        .ToArray();
 
         var newExpression = Expression.New(constructor, arguments);
-
         var memberInitExpression = Expression.MemberInit(newExpression, memberBindings);
         var selectorLambda = Expression.Lambda<Func<T, T>>(memberInitExpression, parameter);
 

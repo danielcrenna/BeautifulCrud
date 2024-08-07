@@ -14,6 +14,5 @@ public sealed class CrudOptions
     public string SkipOperator { get; set; } = "$skip";
     public string TopOperator { get; set; } = "$top";
 
-    public int DefaultPageSize { get; set; } = 10;
-    public int MaxPageSize { get; set; } = 100;
+    public int DefaultPageSize { get; set; } = 25;
 }

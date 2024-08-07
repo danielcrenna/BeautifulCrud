@@ -19,7 +19,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Demo.Controllers", "test\De
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Demo.MinimalApi", "test\Demo.MinimalApi\Demo.MinimalApi.csproj", "{5CD93570-630A-4DCE-B174-1A341126BD04}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Demo.MinimalApi.Aot", "test\Demo.MinimalApi.Aot\Demo.MinimalApi.Aot.csproj", "{831B8A5F-2D09-4DBB-BD24-3D22F342F629}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Demo.MinimalApi.Aot", "test\Demo.MinimalApi.Aot\Demo.MinimalApi.Aot.csproj", "{831B8A5F-2D09-4DBB-BD24-3D22F342F629}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BeautifulCrud.IntegrationTests", "test\BeautifulCrud.IntegrationTests\BeautifulCrud.IntegrationTests.csproj", "{9C5EC5B1-CA42-484D-9674-2DE179A676A7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -51,6 +53,10 @@ Global
 		{831B8A5F-2D09-4DBB-BD24-3D22F342F629}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{831B8A5F-2D09-4DBB-BD24-3D22F342F629}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{831B8A5F-2D09-4DBB-BD24-3D22F342F629}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9C5EC5B1-CA42-484D-9674-2DE179A676A7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9C5EC5B1-CA42-484D-9674-2DE179A676A7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9C5EC5B1-CA42-484D-9674-2DE179A676A7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9C5EC5B1-CA42-484D-9674-2DE179A676A7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

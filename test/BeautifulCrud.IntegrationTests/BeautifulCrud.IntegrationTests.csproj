@@ -23,7 +23,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\..\src\BeautifulCrud\BeautifulCrud.csproj" />
+		<ProjectReference Include="..\Demo.Controllers\Demo.Controllers.csproj" />
 	</ItemGroup>
 
 </Project>
