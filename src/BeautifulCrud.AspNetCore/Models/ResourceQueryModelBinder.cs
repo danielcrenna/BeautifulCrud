@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc.ModelBinding;
 
-namespace BeautifulCrud.AspNetCore;
+namespace BeautifulCrud.AspNetCore.Models;
 
 internal sealed class ResourceQueryModelBinder : IModelBinder
 {

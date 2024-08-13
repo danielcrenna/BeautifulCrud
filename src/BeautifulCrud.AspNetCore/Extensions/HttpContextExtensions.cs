@@ -11,11 +11,7 @@ internal static class HttpContextExtensions
 
         var query = context.GetResourceQuery();
 
-        context.Request.Query.TryGetValue(options.IncludeOperator, out var include);
-        context.Request.Query.TryGetValue(options.SelectOperator, out var select);
-        context.Request.Query.TryGetValue(options.ExcludeOperator, out var exclude);
-		
-        query.Project(type, include, select, exclude);
+        query.Project(type, context.Request.Query, options);
     }
 
     public static void ApplyFilter(this HttpContext context, CrudOptions options)

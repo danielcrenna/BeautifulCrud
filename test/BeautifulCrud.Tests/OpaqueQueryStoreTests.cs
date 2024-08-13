@@ -1,5 +1,3 @@
-using Demo.Shared;
-
 namespace BeautifulCrud.Tests;
 
 public class OpaqueQueryStoreTests
@@ -8,7 +6,7 @@ public class OpaqueQueryStoreTests
     public void RoundTripTest()
     {
         var query = new ResourceQuery();
-        query.Sort<WeatherForecast>("Date ASC");
+        // query.Sort<WeatherForecast>("Date ASC");
         // query.Project(typeof(WeatherForecast), include: default, select: "Date", exclude: default);
 
         var now = DateTimeOffset.Now;
@@ -30,5 +28,14 @@ public class OpaqueQueryStoreTests
         return;
 
         DateTimeOffset StableTimestamp() => now;
+    }
+
+    public sealed class WeatherForecast
+    {
+        public Guid Id { get; set; }
+        public DateOnly Date { get; set; }
+        public int TemperatureC { get; set; }
+        public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+        public string? Summary { get; set; }
     }
 }

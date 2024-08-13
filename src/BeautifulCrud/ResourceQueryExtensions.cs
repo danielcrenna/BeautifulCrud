@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Dynamic;
 using System.Reflection;
+using BeautifulCrud.Extensions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
 
@@ -105,7 +106,20 @@ public static class ResourceQueryExtensions
 
 	private static readonly char[] Comma = [','];
 
-    public static void Project(this ResourceQuery query, Type type, StringValues include, StringValues select, StringValues exclude)
+    public static void Project<T>(this ResourceQuery query, string value, CrudOptions options) => Project(query, typeof(T), value, options);
+	
+    public static void Project(this ResourceQuery query, Type type, IQueryCollection queryString, CrudOptions options)
+    {
+        queryString.TryGetValue(options.IncludeOperator, out var include);
+        queryString.TryGetValue(options.SelectOperator, out var select);
+        queryString.TryGetValue(options.ExcludeOperator, out var exclude);
+		
+        query.Project(type, include, select, exclude);
+    }
+
+    public static void Project(this ResourceQuery query, Type type, string value, CrudOptions options) => query.Project(type, value.AsQueryCollection(), options);
+
+    private static void Project(this ResourceQuery query, Type type, StringValues include, StringValues select, StringValues exclude)
     {
         var topLevelProperties = type.GetProperties()
             .Where(p => p.CanWrite)
@@ -261,7 +275,7 @@ public static class ResourceQueryExtensions
 		}
 	}
 
-    private static object ProjectOne(ResourceQuery query, object instance, Type type)
+    private static One<object> ProjectOne(ResourceQuery query, object instance, Type type)
     {
         var valueProperty = type.GetProperty(nameof(One<object>.Value));
         var errorProperty = type.GetProperty(nameof(One<object>.Error));
@@ -275,7 +289,7 @@ public static class ResourceQueryExtensions
         return new One<object>(value, error.GetValueOrDefault());
     }
 
-    private static object ProjectCountMany(ResourceQuery query, object instance, Type type)
+    private static CountMany<object> ProjectCountMany(ResourceQuery query, object instance, Type type)
     {
         var valueProperty = type.GetProperty(nameof(CountMany<object>.Value));
         var maxItemsProperty = type.GetProperty(nameof(CountMany<object>.MaxItems));
@@ -290,7 +304,7 @@ public static class ResourceQueryExtensions
         return new CountMany<object>(items, maxItems.GetValueOrDefault(), query.NextLink, query.DeltaLink);
     }
 
-    private static object ProjectMany(ResourceQuery query, object instance, Type type)
+    private static Many<object> ProjectMany(ResourceQuery query, object instance, Type type)
     {
         var valueProperty = type.GetProperty(nameof(Many<object>.Value));
         var enumerable = valueProperty?.GetValue(instance, null) as IEnumerable;

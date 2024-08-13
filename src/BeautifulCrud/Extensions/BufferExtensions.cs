@@ -74,9 +74,7 @@ internal static class BufferExtensions
     }
 
     #endregion
-
-
-
+    
     #region VarBuffer
 
     public static void WriteVarBuffer(this BinaryWriter bw, byte[]? buffer)

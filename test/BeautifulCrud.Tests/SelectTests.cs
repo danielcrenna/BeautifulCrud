@@ -7,15 +7,15 @@ public class SelectTests
 	{
 		var list = new List<Three>
 		{
-			new() {Four = "4", Five = "5"}
+			new() { Four = "4", Five = "5" }
 		};
 
 		var queryable = list.AsQueryable();
 		var query = new ResourceQuery();
-
-		query.Project(typeof(Three), default, select: "Four", default);
-
         var options = new CrudOptions();
+
+        query.Project<Three>("$select=Four", options);
+        
 		var results = queryable.ApplyQuery(query, options).ToList();
 
 		Assert.Single(results);
@@ -33,10 +33,10 @@ public class SelectTests
 
         var queryable = list.AsQueryable();
         var query = new ResourceQuery();
-
-		query.Project(typeof(Two), default, select: "Three.Four" , default);
-
         var options = new CrudOptions();
+
+        query.Project<Two>("$select=Three.Four", options);
+        
         var results = queryable.ApplyQuery(query, options).ToList();
 
         Assert.Single(results);
@@ -64,10 +64,10 @@ public class SelectTests
 
         var queryable = list.AsQueryable();
         var query = new ResourceQuery();
-        
-        query.Project(typeof(One), default, select: "Two.Three.Four" , default);
-
         var options = new CrudOptions();
+
+        query.Project<One>("$select=Two.Three.Four", options);
+
         var results = queryable.ApplyQuery(query, options).ToList();
 
         Assert.Single(results);

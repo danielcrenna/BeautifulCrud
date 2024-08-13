@@ -1,6 +1,9 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using BeautifulCrud.AspNetCore.ActionFilters;
 using BeautifulCrud.AspNetCore.Extensions;
+using BeautifulCrud.AspNetCore.Models;
 using BeautifulCrud.AspNetCore.OpenApi;
 using BeautifulCrud.AspNetCore.Serialization;
 using Microsoft.AspNetCore.Http.Json;
@@ -41,20 +44,7 @@ public static class ServiceCollectionExtensions
                 o.ModelBinderProviders.Insert(0, new ResourceQueryModelBinderProvider());
 			});
 
-			builder.AddJsonOptions(o =>
-			{
-				if(!o.JsonSerializerOptions.Converters.OfType<ExpandoObjectConverter>().Any())
-					o.JsonSerializerOptions.Converters.Add(new ExpandoObjectConverter(o.JsonSerializerOptions.PropertyNamingPolicy));
-
-                if(!o.JsonSerializerOptions.Converters.OfType<ManyConverterFactory>().Any())
-                    o.JsonSerializerOptions.Converters.Add(new ManyConverterFactory(o.JsonSerializerOptions.PropertyNamingPolicy));
-
-                if(!o.JsonSerializerOptions.Converters.OfType<CountManyConverterFactory>().Any())
-                    o.JsonSerializerOptions.Converters.Add(new CountManyConverterFactory(o.JsonSerializerOptions.PropertyNamingPolicy));
-
-                if(!o.JsonSerializerOptions.Converters.OfType<OneConverterFactory>().Any())
-                    o.JsonSerializerOptions.Converters.Add(new OneConverterFactory(o.JsonSerializerOptions.PropertyNamingPolicy));
-			});
+			builder.AddJsonOptions(o => { SetJsonOptions(o.JsonSerializerOptions); });
 
 			services.TryAddSingleton<ProjectActionFilter>();
 			services.TryAddSingleton<FilterActionFilter>();
@@ -67,20 +57,7 @@ public static class ServiceCollectionExtensions
 
 		if (options.Features.HasFlagFast(Features.MinimalApis))
 		{
-			services.Configure<JsonOptions>(o =>
-			{
-				if (!o.SerializerOptions.Converters.OfType<ExpandoObjectConverter>().Any())
-					o.SerializerOptions.Converters.Add(new ExpandoObjectConverter(o.SerializerOptions.PropertyNamingPolicy));
-
-                if (!o.SerializerOptions.Converters.OfType<ManyConverterFactory>().Any())
-                    o.SerializerOptions.Converters.Add(new ManyConverterFactory(o.SerializerOptions.PropertyNamingPolicy));
-
-                if (!o.SerializerOptions.Converters.OfType<CountManyConverterFactory>().Any())
-                    o.SerializerOptions.Converters.Add(new CountManyConverterFactory(o.SerializerOptions.PropertyNamingPolicy));
-
-                if (!o.SerializerOptions.Converters.OfType<OneConverterFactory>().Any())
-                    o.SerializerOptions.Converters.Add(new OneConverterFactory(o.SerializerOptions.PropertyNamingPolicy));
-			});
+			services.Configure<JsonOptions>(o => { SetJsonOptions(o.SerializerOptions); });
 		}
 
 		if (options.Features.HasFlagFast(Features.OpenApi))
@@ -94,4 +71,28 @@ public static class ServiceCollectionExtensions
 
 		return services;
 	}
+
+    private static void SetJsonOptions(JsonSerializerOptions options)
+    {
+        if (!options.Converters.OfType<ExpandoObjectConverter>().Any())
+            options.Converters.Add(new ExpandoObjectConverter(options.PropertyNamingPolicy));
+
+        if (!options.Converters.OfType<ManyConverterFactory>().Any())
+            options.Converters.Add(new ManyConverterFactory(options.PropertyNamingPolicy));
+
+        if (!options.Converters.OfType<CountManyConverterFactory>().Any())
+            options.Converters.Add(new CountManyConverterFactory(options.PropertyNamingPolicy));
+
+        if (!options.Converters.OfType<OneConverterFactory>().Any())
+            options.Converters.Add(new OneConverterFactory(options.PropertyNamingPolicy));
+
+        // 
+        // Currently, we're setting the enum to camelCase because it's indicated in the guidelines
+        // (though it's shown once as PascalCase, so it's not entirely clear):
+        //
+        // https://github.com/microsoft/api-guidelines/blob/vNext/Guidelines.md#1323-post-hybrid-model
+        //
+        if (!options.Converters.Any(x => x is JsonStringEnumConverter))
+            options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+    }
 }
