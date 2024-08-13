@@ -20,7 +20,7 @@ public static class ResourceQueryExtensions
 		return query;
 	}
 
-	#region OrderBy
+	#region Sorting
 
 	private static readonly char[] Space = [' '];
 
@@ -102,11 +102,13 @@ public static class ResourceQueryExtensions
 
 	#endregion
 
-	#region Select
+	#region Projection
 
 	private static readonly char[] Comma = [','];
 
     public static void Project<T>(this ResourceQuery query, string value, CrudOptions options) => Project(query, typeof(T), value, options);
+
+    public static void Project(this ResourceQuery query, Type type, string value, CrudOptions options) => query.Project(type, value.AsQueryCollection(), options);
 	
     public static void Project(this ResourceQuery query, Type type, IQueryCollection queryString, CrudOptions options)
     {
@@ -116,8 +118,6 @@ public static class ResourceQueryExtensions
 		
         query.Project(type, include, select, exclude);
     }
-
-    public static void Project(this ResourceQuery query, Type type, string value, CrudOptions options) => query.Project(type, value.AsQueryCollection(), options);
 
     private static void Project(this ResourceQuery query, Type type, StringValues include, StringValues select, StringValues exclude)
     {
@@ -346,7 +346,18 @@ public static class ResourceQueryExtensions
 
 	#region Paging
 
-	public static void Paging(this ResourceQuery query, StringValues maxPageSizeClause, StringValues skipClauses, StringValues topClauses, CrudOptions options)
+    public static void Paging(this ResourceQuery query, string value, CrudOptions options) => query.Paging(value.AsQueryCollection(), options);
+
+    public static void Paging(this ResourceQuery query, IQueryCollection queryString, CrudOptions options)
+    {
+        queryString.TryGetValue(options.MaxPageSizeOperator, out var maxPageSize);
+        queryString.TryGetValue(options.SkipOperator, out var skip);
+        queryString.TryGetValue(options.TopOperator, out var top);
+		
+        query.Paging(maxPageSize, skip, top, options);
+    }
+
+    private static void Paging(this ResourceQuery query, StringValues maxPageSizeClause, StringValues skipClauses, StringValues topClauses, CrudOptions options)
 	{
 		query.Paging ??= new Paging();
 

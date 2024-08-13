@@ -15,7 +15,7 @@ public class PagingTest
 		var query = new ResourceQuery();
 
         var options = new CrudOptions();
-        query.Paging(maxPageSizeClause: default, skipClauses: "1", topClauses: "1", options);
+        query.Paging("$skip=1&$top=1", options);
 
 		var results = queryable.ApplyQuery(query, options).ToList();
 		Assert.Single(results);

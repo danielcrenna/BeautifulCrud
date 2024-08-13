@@ -1,6 +1,6 @@
 namespace BeautifulCrud.Tests;
 
-public class WhereTests
+public class FilterTests
 {
 	[Fact]
 	public void Basic()

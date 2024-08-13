@@ -42,12 +42,7 @@ internal static class HttpContextExtensions
     {
         var query = context.GetResourceQuery();
         query.ServerUri = context.Request.GetServerUri();
-
-        context.Request.Query.TryGetValue(options.MaxPageSizeOperator, out var maxPageSize);
-        context.Request.Query.TryGetValue(options.SkipOperator, out var skip);
-        context.Request.Query.TryGetValue(options.TopOperator, out var top);
-
-        query.Paging(maxPageSize, skip, top, options);
+        query.Paging(context.Request.Query, options);
     }
 
     public static void ApplyCount(this HttpContext context, CrudOptions options)
