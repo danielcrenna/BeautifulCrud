@@ -24,6 +24,7 @@
 
 	<ItemGroup>
 	  <ProjectReference Include="..\..\src\BeautifulCrud\BeautifulCrud.csproj" />
+	  <ProjectReference Include="..\Demo.Shared\Demo.Shared.csproj" />
 	</ItemGroup>
 
 </Project>

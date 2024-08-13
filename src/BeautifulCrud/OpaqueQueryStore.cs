@@ -1,12 +1,14 @@
 ﻿using System.Reflection;
 using System.Text;
-using Microsoft.AspNetCore.WebUtilities;
 using BeautifulCrud.Extensions;
+using Microsoft.AspNetCore.WebUtilities;
 
 namespace BeautifulCrud;
 
 public sealed class OpaqueQueryStore(Func<DateTimeOffset> timestamps) : IQueryStore
 {
+    private const string SegmentSeparator = "__";
+
     public string BuildQueryHash(Type type, ResourceQuery query)
     {
         ArgumentNullException.ThrowIfNull(type);
@@ -14,17 +16,17 @@ public sealed class OpaqueQueryStore(Func<DateTimeOffset> timestamps) : IQuerySt
         var now = timestamps();
 
         var sb = new StringBuilder();
-        {
-            sb.Append(type.FullName);
-            sb.Append('_');
-            sb.Append(now.ToUnixTimeSeconds());
-            sb.Append('_');
-        };
+        sb.Append(type.FullName);
+        sb.Append(SegmentSeparator);
+        sb.Append(now.ToUnixTimeSeconds());
+        sb.Append(SegmentSeparator);
 
         var key = sb.ToString();
         var data = SerializeResourceQuery(query);
-        var value = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(key).Concat(data));
-        return value;
+        var keyAndData = Encoding.UTF8.GetBytes(key).Concat(data);
+        var queryHash = WebEncoders.Base64UrlEncode(keyAndData);
+
+        return queryHash;
     }
 
     public ResourceQuery? GetQueryFromHash(Type context, string? queryHash)
@@ -32,14 +34,15 @@ public sealed class OpaqueQueryStore(Func<DateTimeOffset> timestamps) : IQuerySt
         if (string.IsNullOrWhiteSpace(queryHash))
             return null;
 
-        var continuationToken = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(queryHash));
-        var segments = continuationToken.Split("_");
+        var keyAndData = WebEncoders.Base64UrlDecode(queryHash);
+        var continuationToken = Encoding.UTF8.GetString(keyAndData);
+        var segments = continuationToken.Split(SegmentSeparator);
 
         var contextSegment = segments.FirstOrDefault();
         if (string.IsNullOrWhiteSpace(contextSegment) || contextSegment != context.FullName)
             return null;
         
-        var tokens = continuationToken.Split('_', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var tokens = continuationToken.Split(SegmentSeparator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         if (tokens.Length != 3)
             return null;
 

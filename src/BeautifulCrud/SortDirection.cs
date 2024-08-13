@@ -1,6 +1,6 @@
 ﻿namespace BeautifulCrud;
 
-public enum SortDirection
+public enum SortDirection : byte
 {
     Ascending,
     Descending

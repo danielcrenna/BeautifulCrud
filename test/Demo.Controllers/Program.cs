@@ -1,8 +1,5 @@
-using System.Runtime.CompilerServices;
 using BeautifulCrud;
 using BeautifulCrud.AspNetCore;
-
-[assembly: InternalsVisibleTo("BeautifulCrud.IntegrationTests")]
 
 var builder = WebApplication.CreateBuilder(args);
 

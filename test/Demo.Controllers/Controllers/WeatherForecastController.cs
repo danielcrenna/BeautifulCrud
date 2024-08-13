@@ -1,5 +1,6 @@
 using BeautifulCrud;
 using BeautifulCrud.AspNetCore.Attributes;
+using Demo.Shared;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 

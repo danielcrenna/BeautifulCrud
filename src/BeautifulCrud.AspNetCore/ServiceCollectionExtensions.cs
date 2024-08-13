@@ -1,4 +1,5 @@
-﻿using BeautifulCrud.AspNetCore.ActionFilters;
+﻿using System.Diagnostics.CodeAnalysis;
+using BeautifulCrud.AspNetCore.ActionFilters;
 using BeautifulCrud.AspNetCore.Extensions;
 using BeautifulCrud.AspNetCore.OpenApi;
 using BeautifulCrud.AspNetCore.Serialization;
@@ -12,6 +13,7 @@ namespace BeautifulCrud.AspNetCore;
 
 public static class ServiceCollectionExtensions
 {
+    [ExcludeFromCodeCoverage]
     public static IServiceCollection AddBeautifulCrud(this IServiceCollection services, IConfiguration configuration) => services.AddBeautifulCrud(configuration.Bind);
 
     public static IServiceCollection AddBeautifulCrud(this IServiceCollection services, Action<CrudOptions>? configureAction)

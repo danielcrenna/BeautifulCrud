@@ -1,6 +1,6 @@
 using BeautifulCrud;
 using BeautifulCrud.AspNetCore;
-using Demo.MinimalApi;
+using Demo.Shared;
 using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -28,11 +28,11 @@ var summaries = new[]
 
 var data = Enumerable.Range(1, 50).Select(index =>
     new WeatherForecast
-    (
-        DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-        Random.Shared.Next(-20, 55),
-        summaries[Random.Shared.Next(summaries.Length)]
-    ));
+    {
+        Date = DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
+        TemperatureC = Random.Shared.Next(-20, 55),
+        Summary = summaries[Random.Shared.Next(summaries.Length)]
+    });
 
 app.MapGet("/weatherforecast", async (ResourceQuery query, IOptionsSnapshot<CrudOptions> options, CancellationToken cancellationToken) => await data.AsQueryable().ToManyAsync(query, options.Value, cancellationToken))
 .CollectionQuery()

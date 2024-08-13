@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\BeautifulCrud.AspNetCore\BeautifulCrud.AspNetCore.csproj" />
+    <ProjectReference Include="..\Demo.Shared\Demo.Shared.csproj" />
   </ItemGroup>
 
 </Project>

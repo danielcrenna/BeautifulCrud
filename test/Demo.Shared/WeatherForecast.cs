@@ -1,6 +1,6 @@
 using BeautifulCrud;
 
-namespace Demo.Controllers;
+namespace Demo.Shared;
 
 // ReSharper disable once NonReadonlyMemberInGetHashCode
 

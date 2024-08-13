@@ -1,5 +1,5 @@
 using System.Net.Http.Json;
-using Demo.Controllers;
+using Demo.Shared;
 using Xunit;
 
 namespace BeautifulCrud.IntegrationTests;
@@ -17,6 +17,7 @@ public class DemoControllerPagingTests
 
         var content = await response.Content.ReadFromJsonAsync<Many<WeatherForecast>>();
         Assert.NotNull(content);
+        Assert.NotNull(content.Value);
         Assert.True(content.Items == 50);
     }
 
@@ -31,6 +32,7 @@ public class DemoControllerPagingTests
 
         var content = await response.Content.ReadFromJsonAsync<Many<WeatherForecast>>();
         Assert.NotNull(content);
+        Assert.NotNull(content.Value);
         Assert.True(content.Items == 10);
     }
 
