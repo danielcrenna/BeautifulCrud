@@ -6,10 +6,15 @@ namespace BeautifulCrud;
 public static class QueryableExtensions
 {
     private static readonly IContinuationTokenGenerator ContinuationTokenGenerator =
-        new PortableContinuationTokenGenerator(
+        new InMemoryContinuationTokenGenerator(
             () => DateTimeOffset.Now, 
-            new Base64QueryHashEncoder(),
             new BinaryResourceQuerySerializer());
+
+    //private static readonly IContinuationTokenGenerator ContinuationTokenGenerator =
+    //    new PortableContinuationTokenGenerator(
+    //        () => DateTimeOffset.Now, 
+    //        new Base64QueryHashEncoder(),
+    //        new BinaryResourceQuerySerializer());
 
     public static IQueryable<T> ApplyQuery<T>(this IQueryable<T> queryable, ResourceQuery query, CrudOptions options, bool fetchOneMore = true) where T : class
     {
@@ -71,7 +76,9 @@ public static class QueryableExtensions
 
 	    var data = await QueryAsync();
 
-        if (data.Count > query.Paging?.PageSize.GetValueOrDefault(options.DefaultPageSize))
+        var pageSize = query.Paging?.PageSize.GetValueOrDefault(options.DefaultPageSize);
+
+        if (data.Count > pageSize)
         {
             data.RemoveAt(data.Count - 1);
 
@@ -112,8 +119,8 @@ public static class QueryableExtensions
     {
         // See: https://github.com/microsoft/api-guidelines/blob/vNext/Guidelines.md#981-server-driven-paging
         var baseUrl = query.ServerUri;
-        var opaqueUrl = continuationTokenGenerator.Build(type, query);
-        var nextLink = $"{baseUrl}/nextLink/{opaqueUrl}";
+        var continuationToken = continuationTokenGenerator.Build(type, query);
+        var nextLink = $"{baseUrl}/nextLink/{continuationToken}";
         query.NextLink = nextLink;
     }
 
@@ -121,8 +128,8 @@ public static class QueryableExtensions
     {
         // See: https://github.com/microsoft/api-guidelines/blob/vNext/Guidelines.md#981-server-driven-paging
         var baseUrl = query.ServerUri;
-        var opaqueUrl = continuationTokenGenerator.Build(type, query);
-        var deltaLink = $"{baseUrl}/deltaLink/{opaqueUrl}";
+        var continuationToken = continuationTokenGenerator.Build(type, query);
+        var deltaLink = $"{baseUrl}/deltaLink/{continuationToken}";
         query.DeltaLink = deltaLink;
     }
 

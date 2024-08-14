@@ -8,6 +8,11 @@ public sealed class BinaryResourceQuerySerializer : IResourceQuerySerializer
 {
     public void Serialize(ResourceQuery query, BinaryWriter bw)
     {
+        SerializeInternal(query, bw);
+    }
+
+    internal static void SerializeInternal(ResourceQuery query, BinaryWriter bw)
+    {
         WriteProjections(bw, query);
         WriteFilter(bw, query);
         WriteSorting(bw, query);
@@ -21,6 +26,11 @@ public sealed class BinaryResourceQuerySerializer : IResourceQuerySerializer
     }
 
     public ResourceQuery Deserialize(BinaryReader br)
+    {
+        return DeserializeInternal(br);
+    }
+
+    internal static ResourceQuery DeserializeInternal(BinaryReader br)
     {
         var query = new ResourceQuery();
 

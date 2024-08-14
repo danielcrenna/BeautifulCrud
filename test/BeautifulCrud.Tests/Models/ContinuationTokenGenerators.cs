@@ -5,5 +5,6 @@ public class ContinuationTokenGenerators : TheoryData<IContinuationTokenGenerato
     public ContinuationTokenGenerators(Func<DateTimeOffset> timestamps)
     {
         Add(new PortableContinuationTokenGenerator(timestamps, new Base64QueryHashEncoder(), new BinaryResourceQuerySerializer()));
+        Add(new InMemoryContinuationTokenGenerator(timestamps, new BinaryResourceQuerySerializer()));
     }
 }

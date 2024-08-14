@@ -8,6 +8,8 @@
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.8" />
+		<PackageReference Include="Sqids" Version="3.1.0" />
+		<PackageReference Include="WyHash" Version="1.0.5" />
 		<FrameworkReference Include="Microsoft.AspNetCore.App" />
 	</ItemGroup>
 

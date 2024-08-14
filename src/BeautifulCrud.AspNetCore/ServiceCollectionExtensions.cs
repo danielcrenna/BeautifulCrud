@@ -34,7 +34,7 @@ public static class ServiceCollectionExtensions
             services.TryAddSingleton<Func<DateTimeOffset>>(_ => () => DateTimeOffset.Now);
             services.TryAddSingleton<IQueryHashEncoder, Base64QueryHashEncoder>();
             services.TryAddSingleton<IResourceQuerySerializer, BinaryResourceQuerySerializer>();
-            services.TryAddSingleton<IContinuationTokenGenerator, PortableContinuationTokenGenerator>();
+            services.TryAddSingleton<IContinuationTokenGenerator, InMemoryContinuationTokenGenerator>();
         }
 
 		if (options.Features.HasFlagFast(Features.Controllers))

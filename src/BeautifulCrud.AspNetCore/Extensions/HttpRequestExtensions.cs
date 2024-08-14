@@ -10,12 +10,23 @@ internal static class HttpRequestExtensions
         {
             Scheme = request.Scheme,
             Host = request.Host.Host,
-            Path = request.Path
+            Path = NormalizePathString(request)
         };
 
         if (request.Host.Port.HasValue)
             uriBuilder.Port = request.Host.Port.Value;
 
         return uriBuilder.Uri;
+    }
+
+    private static PathString NormalizePathString(HttpRequest request)
+    {
+        var path = request.Path.HasValue 
+            ? new PathString(request.Path.Value.TrimEnd('/')) 
+            : request.Path;
+
+        if (string.IsNullOrEmpty(path.Value))
+            path = new PathString("/");
+        return path;
     }
 }

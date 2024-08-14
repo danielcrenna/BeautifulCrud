@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using BeautifulCrud.AspNetCore.Extensions;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Options;
@@ -34,7 +35,8 @@ public class NextLinkMiddleware(RequestDelegate next,
         var nextLinkIndex = Array.FindIndex(segments,
             segment => string.Equals(segment, "nextLink", StringComparison.OrdinalIgnoreCase));
 
-        if (nextLinkIndex == -1 || nextLinkIndex + 1 >= segments.Length) return;
+        if (nextLinkIndex == -1 || nextLinkIndex + 1 >= segments.Length)
+            return;
 
         var continuationToken = segments[nextLinkIndex + 1];
         var endpoints = endpointDataSources.SelectMany(dataSource => dataSource.Endpoints);
@@ -55,7 +57,20 @@ public class NextLinkMiddleware(RequestDelegate next,
                 continue;
 
             var query = continuationTokenGenerator.Parse(type, continuationToken);
-            if (query?.Paging != null)
+            if (query == null)
+            {
+                context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                context.Response.ContentType = "application/problem+json";
+                context.Response.WriteAsJsonAsync(new ProblemDetails
+                {
+                    Status = StatusCodes.Status400BadRequest,
+                    Title = "Invalid Continuation Token",
+                    Detail = "The provided continuation token could not be parsed, is expired, or invalid."
+                }).Wait();
+                return;
+            }
+
+            if (query.Paging != null)
                 query.Paging.PageOffset += query.Paging.PageSize.GetValueOrDefault(options.CurrentValue.DefaultPageSize);
 
             if (!context.Items.TryAdd(nameof(ResourceQuery), query))

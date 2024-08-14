@@ -10,7 +10,13 @@ public class QueryHashEncoderTests(ITestOutputHelper console)
     [Theory, ClassData(typeof(QueryHashEncoders))]
     public void RoundTripTest(IQueryHashEncoder encoder)
     {
-        var buffer = "This is a test."u8.ToArray();
+        using var ms = new MemoryStream();
+        using var bw = new BinaryWriter(ms);
+
+        var query = ResourceQueryFactory.BuildResourceQuery(DateTimeOffset.Now);
+        BinaryResourceQuerySerializer.SerializeInternal(query, bw);
+
+        var buffer = ms.ToArray();
         var encoded = encoder.Encode(buffer);
         var decoded = encoder.Decode(encoded);
         Assert.True(buffer.SequenceEqual(decoded));

@@ -15,7 +15,7 @@ public static class ResourceQueryFactory
         expected.CountTotalRows = true;
         expected.IsDeltaQuery = true;
         expected.AsOfDateTime = timestamp;
-        expected.ServerUri = new Uri("https://localhost:5000", UriKind.Absolute);
+        expected.ServerUri = new Uri("https://localhost:5000/", UriKind.Absolute);
 
         return expected;
     }

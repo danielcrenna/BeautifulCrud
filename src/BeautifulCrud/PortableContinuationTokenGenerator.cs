@@ -1,4 +1,5 @@
-﻿using BeautifulCrud.Extensions;
+﻿using System.Runtime.CompilerServices;
+using BeautifulCrud.Extensions;
 
 namespace BeautifulCrud;
 
@@ -8,14 +9,14 @@ namespace BeautifulCrud;
 /// </summary>
 public sealed class PortableContinuationTokenGenerator(Func<DateTimeOffset> timestamps, IQueryHashEncoder encoder, IResourceQuerySerializer serializer) : IContinuationTokenGenerator
 {
-    public string Build(Type type, ResourceQuery query)
+    public string Build(Type context, ResourceQuery query)
     {
-        ArgumentNullException.ThrowIfNull(type);
+        ArgumentNullException.ThrowIfNull(context);
 
         using var ms = new MemoryStream();
         using var bw = new BinaryWriter(ms);
 
-        bw.WriteNullableString(type.FullName);
+        bw.WriteNullableString(context.FullName);
         bw.WriteNullableDateTimeOffset(timestamps());
         serializer.Serialize(query, bw);
 
@@ -23,9 +24,9 @@ public sealed class PortableContinuationTokenGenerator(Func<DateTimeOffset> time
         return encoder.Encode(buffer);
     }
     
-    public ResourceQuery? Parse(Type type, string? continuationToken)
+    public ResourceQuery? Parse(Type context, string? continuationToken)
     {
-        ArgumentNullException.ThrowIfNull(type);
+        ArgumentNullException.ThrowIfNull(context);
 
         if (string.IsNullOrWhiteSpace(continuationToken))
             return null;
@@ -36,8 +37,7 @@ public sealed class PortableContinuationTokenGenerator(Func<DateTimeOffset> time
         using var br = new BinaryReader(ms);
 
         var typeFullName = br.ReadNullableString();
-        
-        if (string.IsNullOrWhiteSpace(typeFullName) || typeFullName != type.FullName)
+        if (string.IsNullOrWhiteSpace(typeFullName) || typeFullName != context.FullName)
             return null;
         
         var asOfDateTime = br.ReadNullableDateTimeOffset();
