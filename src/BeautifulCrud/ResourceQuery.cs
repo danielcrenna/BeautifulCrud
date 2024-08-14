@@ -17,12 +17,12 @@ public sealed class ResourceQuery
 
     public List<(PropertyInfo?, string, SortDirection)> Sorting { get; set; } = [];
     public List<ProjectionPath> Projection { get; set; } = [];
-    public List<(string, string)> Search { get; set; } = [];
+    public List<(string column, string predicate)> Search { get; set; } = [];
     
     public bool CountTotalRows { get; set; }
     public bool PreferMinimal { get; set; }
     public bool IsDeltaQuery { get; set; }
 
-    // ReSharper disable once UnusedMember.Global
+    // ReSharper disable once UnusedMember.Global (Called by ASP.NET Core runtime via reflection, and required for model binding)
     public static ValueTask<ResourceQuery> BindAsync(HttpContext httpContext, ParameterInfo parameter) => ValueTask.FromResult(httpContext.GetResourceQuery());
 }

@@ -31,8 +31,10 @@ public static class ServiceCollectionExtensions
 
         if (options.Features.HasFlagFast(Features.Controllers) || options.Features.HasFlagFast(Features.MinimalApis))
         {
-            services.TryAdd(ServiceDescriptor.Singleton<Func<DateTimeOffset>>(_ => () => DateTimeOffset.Now));
-            services.TryAddSingleton<IQueryStore, OpaqueQueryStore>();
+            services.TryAddSingleton<Func<DateTimeOffset>>(_ => () => DateTimeOffset.Now);
+            services.TryAddSingleton<IQueryHashEncoder, Base64QueryHashEncoder>();
+            services.TryAddSingleton<IResourceQuerySerializer, BinaryResourceQuerySerializer>();
+            services.TryAddSingleton<IContinuationTokenGenerator, PortableContinuationTokenGenerator>();
         }
 
 		if (options.Features.HasFlagFast(Features.Controllers))

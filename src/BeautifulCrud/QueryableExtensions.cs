@@ -5,7 +5,11 @@ namespace BeautifulCrud;
 
 public static class QueryableExtensions
 {
-    private static readonly IQueryStore QueryStore = new OpaqueQueryStore(() => DateTimeOffset.Now);
+    private static readonly IContinuationTokenGenerator ContinuationTokenGenerator =
+        new PortableContinuationTokenGenerator(
+            () => DateTimeOffset.Now, 
+            new Base64QueryHashEncoder(),
+            new BinaryResourceQuerySerializer());
 
     public static IQueryable<T> ApplyQuery<T>(this IQueryable<T> queryable, ResourceQuery query, CrudOptions options, bool fetchOneMore = true) where T : class
     {
@@ -71,10 +75,10 @@ public static class QueryableExtensions
         {
             data.RemoveAt(data.Count - 1);
 
-            NextLink(typeof(T), query, QueryStore);
+            NextLink(typeof(T), query, ContinuationTokenGenerator);
 
             if(query.IsDeltaQuery)
-                DeltaLink(typeof(T), query, QueryStore);
+                DeltaLink(typeof(T), query, ContinuationTokenGenerator);
         }
 
         {
@@ -85,7 +89,7 @@ public static class QueryableExtensions
                 count = await CountAsync(queryable);
 
                 if(count <= data.Count && query.IsDeltaQuery)
-                    DeltaLink(typeof(T), query, QueryStore);
+                    DeltaLink(typeof(T), query, ContinuationTokenGenerator);
             }
 
             return (data, count);
@@ -104,20 +108,20 @@ public static class QueryableExtensions
 	    async Task<int> CountAsync(IQueryable<T> source) => source.IsEfCoreQueryable() ? await source.CountAsync(cancellationToken) : source.Count();
     }
 
-    private static void NextLink(Type type, ResourceQuery query, IQueryStore queryStore)
+    private static void NextLink(Type type, ResourceQuery query, IContinuationTokenGenerator continuationTokenGenerator)
     {
         // See: https://github.com/microsoft/api-guidelines/blob/vNext/Guidelines.md#981-server-driven-paging
         var baseUrl = query.ServerUri;
-        var opaqueUrl = queryStore.BuildQueryHash(type, query);
+        var opaqueUrl = continuationTokenGenerator.Build(type, query);
         var nextLink = $"{baseUrl}/nextLink/{opaqueUrl}";
         query.NextLink = nextLink;
     }
 
-    private static void DeltaLink(Type type, ResourceQuery query, IQueryStore queryStore)
+    private static void DeltaLink(Type type, ResourceQuery query, IContinuationTokenGenerator continuationTokenGenerator)
     {
         // See: https://github.com/microsoft/api-guidelines/blob/vNext/Guidelines.md#981-server-driven-paging
         var baseUrl = query.ServerUri;
-        var opaqueUrl = queryStore.BuildQueryHash(type, query);
+        var opaqueUrl = continuationTokenGenerator.Build(type, query);
         var deltaLink = $"{baseUrl}/deltaLink/{opaqueUrl}";
         query.DeltaLink = deltaLink;
     }

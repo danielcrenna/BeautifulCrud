@@ -8,7 +8,7 @@ using Microsoft.Extensions.Options;
 namespace BeautifulCrud.AspNetCore.Models;
 
 public class NextLinkMiddleware(RequestDelegate next, 
-    IQueryStore queryStore, 
+    IContinuationTokenGenerator continuationTokenGenerator, 
     IEnumerable<EndpointDataSource> endpointDataSources,
     IOptionsMonitor<CrudOptions> options)
 {
@@ -54,7 +54,7 @@ public class NextLinkMiddleware(RequestDelegate next,
             if (!ResolveType(endpoint, out var type))
                 continue;
 
-            var query = queryStore.GetQueryFromHash(type, continuationToken);
+            var query = continuationTokenGenerator.Parse(type, continuationToken);
             if (query?.Paging != null)
                 query.Paging.PageOffset += query.Paging.PageSize.GetValueOrDefault(options.CurrentValue.DefaultPageSize);
 

@@ -1,6 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-
-namespace BeautifulCrud.Extensions;
+﻿namespace BeautifulCrud.Extensions;
 
 internal static class BufferExtensions
 {
@@ -18,14 +16,13 @@ internal static class BufferExtensions
 
     public static void WriteNullableString(this BinaryWriter bw, string? value)
     {
-        if (bw.WriteBoolean(value != null))
-            bw.Write(value!);
+        if (!bw.WriteBoolean(value != null))
+            return;
+
+        bw.Write(value!);
     }
 
-    public static string? ReadNullableString(this BinaryReader br)
-    {
-        return br.ReadBoolean() ? br.ReadString() : null;
-    }
+    public static string? ReadNullableString(this BinaryReader br) => br.ReadBoolean() ? br.ReadString() : null;
 
     #endregion
 
@@ -49,8 +46,10 @@ internal static class BufferExtensions
 
     public static void WriteNullableInt32(this BinaryWriter bw, int? value)
     {
-        if (bw.WriteBoolean(value.HasValue))
-            bw.Write(value!.Value);
+        if (!bw.WriteBoolean(value.HasValue))
+            return;
+
+        bw.Write(value!.Value);
     }
 
     public static int? ReadNullableInt32(this BinaryReader br)
@@ -60,17 +59,23 @@ internal static class BufferExtensions
 
     #endregion
 
-    #region DateTimeOffset
+    #region Nullable<DateTimeOffset>
 
     public static void WriteNullableDateTimeOffset(this BinaryWriter bw, DateTimeOffset? value)
     {
-        if (bw.WriteBoolean(value.HasValue))
-            bw.Write(value!.Value.ToUnixTimeSeconds());
+        if (!bw.WriteBoolean(value.HasValue))
+            return;
+
+        bw.Write(value!.Value.Ticks);
+        bw.Write(value.Value.Offset.Ticks);
     }
 
     public static DateTimeOffset? ReadNullableDateTimeOffset(this BinaryReader br)
     {
-        return br.ReadBoolean() ? DateTimeOffset.FromUnixTimeSeconds(br.ReadInt64()) : null;
+        if (!br.ReadBoolean())
+            return null;
+
+        return new DateTimeOffset(br.ReadInt64(), new TimeSpan(br.ReadInt64()));
     }
 
     #endregion
@@ -107,31 +112,6 @@ internal static class BufferExtensions
     public static Guid ReadGuid(this BinaryReader br)
     {
         return new Guid(br.ReadBytes(16));
-    }
-
-    #endregion
-
-    #region Concat
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static byte[] Concat(this byte[] left, byte[] right) => Concat(left.AsSpan(), right);
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static byte[] Concat(this byte[] left, ReadOnlySpan<byte> right) => Concat(left.AsSpan(), right);
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static byte[] Concat(this ReadOnlySpan<byte> left, ReadOnlySpan<byte> right) => left.Concat<byte>(right);
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static char[] Concat(this ReadOnlySpan<char> left, ReadOnlySpan<char> right) => left.Concat<char>(right);
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static T[] Concat<T>(this ReadOnlySpan<T> left, ReadOnlySpan<T> right)
-    {
-        var result = new T[left.Length + right.Length];
-        left.CopyTo(result);
-        right.CopyTo(result.AsSpan()[left.Length..]);
-        return result;
     }
 
     #endregion

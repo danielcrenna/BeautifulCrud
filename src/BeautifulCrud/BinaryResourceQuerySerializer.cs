@@ -1,96 +1,33 @@
-﻿using System.Reflection;
-using System.Text;
-using BeautifulCrud.Extensions;
-using Microsoft.AspNetCore.WebUtilities;
+﻿using BeautifulCrud.Extensions;
+using Microsoft.Extensions.Primitives;
+using System.Reflection;
 
 namespace BeautifulCrud;
 
-public sealed class OpaqueQueryStore(Func<DateTimeOffset> timestamps) : IQueryStore
+public sealed class BinaryResourceQuerySerializer : IResourceQuerySerializer
 {
-    private const string SegmentSeparator = "__";
-
-    public string BuildQueryHash(Type type, ResourceQuery query)
+    public void Serialize(ResourceQuery query, BinaryWriter bw)
     {
-        ArgumentNullException.ThrowIfNull(type);
-
-        var now = timestamps();
-
-        var sb = new StringBuilder();
-        sb.Append(type.FullName);
-        sb.Append(SegmentSeparator);
-        sb.Append(now.ToUnixTimeSeconds());
-        sb.Append(SegmentSeparator);
-
-        var key = sb.ToString();
-        var data = SerializeResourceQuery(query);
-        var keyAndData = Encoding.UTF8.GetBytes(key).Concat(data);
-        var queryHash = WebEncoders.Base64UrlEncode(keyAndData);
-
-        return queryHash;
-    }
-
-    public ResourceQuery? GetQueryFromHash(Type context, string? queryHash)
-    {
-        if (string.IsNullOrWhiteSpace(queryHash))
-            return null;
-
-        var keyAndData = WebEncoders.Base64UrlDecode(queryHash);
-        var continuationToken = Encoding.UTF8.GetString(keyAndData);
-        var segments = continuationToken.Split(SegmentSeparator);
-
-        var contextSegment = segments.FirstOrDefault();
-        if (string.IsNullOrWhiteSpace(contextSegment) || contextSegment != context.FullName)
-            return null;
-        
-        var tokens = continuationToken.Split(SegmentSeparator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        if (tokens.Length != 3)
-            return null;
-
-        var serialized = tokens[2];
-        var deserialized = DeserializeResourceQuery(Encoding.UTF8.GetBytes(serialized));
-
-        var asOfSegment = segments.Skip(1).Take(1).SingleOrDefault();
-
-        if (deserialized.IsDeltaQuery && asOfSegment != null)
-        {
-            if(long.TryParse(asOfSegment, out var asOf))
-                deserialized.AsOfDateTime = DateTimeOffset.FromUnixTimeSeconds(asOf);
-        }
-
-        return deserialized;
-    }
-
-    private static byte[] SerializeResourceQuery(ResourceQuery query)
-    {
-        var ms = new MemoryStream();
-        var bw = new BinaryWriter(ms);
-
+        WriteProjections(bw, query);
         WriteFilter(bw, query);
         WriteSorting(bw, query);
         WritePaging(bw, query);
-        WriteProjections(bw, query);
         WriteSearch(bw, query);
 
         bw.Write(query.CountTotalRows);
         bw.Write(query.IsDeltaQuery);
         bw.WriteNullableDateTimeOffset(query.AsOfDateTime);
         bw.WriteNullableString(query.ServerUri?.ToString());
-
-        var data = ms.ToArray();
-        return data;
     }
 
-    private static ResourceQuery DeserializeResourceQuery(byte[] buffer)
+    public ResourceQuery Deserialize(BinaryReader br)
     {
-        var ms = new MemoryStream(buffer);
-        var br = new BinaryReader(ms);
-
         var query = new ResourceQuery();
 
+        ReadProjections(br, query);
         ReadFilter(br, query);
         ReadSorting(br, query);
         ReadPaging(br, query);
-        ReadProjections(br, query);
         ReadSearch(br, query);
 
         query.CountTotalRows = br.ReadBoolean();
@@ -103,7 +40,7 @@ public sealed class OpaqueQueryStore(Func<DateTimeOffset> timestamps) : IQuerySt
 
         return query;
     }
-    
+
     private static void WriteSorting(BinaryWriter bw, ResourceQuery query)
     {
         bw.Write(query.Sorting.Count);
@@ -165,7 +102,7 @@ public sealed class OpaqueQueryStore(Func<DateTimeOffset> timestamps) : IQuerySt
         var projectionCount = br.ReadInt32();
         query.Projection = new List<ProjectionPath>(projectionCount);
         for (var i = 0; i < projectionCount; i++)
-            ReadProjectionPath(br);
+            query.Projection.Add(ReadProjectionPath(br));
     }
 
     private static void WriteProjectionPath(BinaryWriter bw, ProjectionPath projection)
@@ -259,6 +196,7 @@ public sealed class OpaqueQueryStore(Func<DateTimeOffset> timestamps) : IQuerySt
 
     private static void ReadFilter(BinaryReader br, ResourceQuery query)
     {
-        query.Filter = br.ReadNullableString();
+        var value = br.ReadNullableString();
+        query.Filter = value != null ? new StringValues(value) : (StringValues?)null;
     }
 }
