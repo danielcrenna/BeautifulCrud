@@ -71,6 +71,8 @@ public static class ServiceCollectionExtensions
 			});
 		}
 
+        services.AddProblemDetails();
+
 		return services;
 	}
 

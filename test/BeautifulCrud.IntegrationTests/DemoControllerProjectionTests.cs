@@ -71,7 +71,7 @@ public class DemoControllerProjectionTests
         var secondPage = await secondPageResponse.Content.ReadFromJsonAsync<Many<WeatherForecast>>();
         Assert.NotNull(secondPage);
         Assert.NotNull(secondPage.Value);
-        Assert.True(secondPage.Items == 10);
+        Assert.Equal(10, secondPage.Items);
 
         foreach (var value in secondPage.Value)
         {
