@@ -28,7 +28,7 @@ public sealed class CrudOperationFilter(IServiceProvider serviceProvider, IOptio
 	{
         var isCollectionQuery = Has<CollectionQueryAttribute>(descriptor);
 
-		#region Select
+		#region Projection
 
         if (isCollectionQuery || HasAny<ItemQueryAttribute, ProjectActionFilter, ProjectEndpointFilter>(descriptor))
 		{
@@ -59,7 +59,7 @@ public sealed class CrudOperationFilter(IServiceProvider serviceProvider, IOptio
 
 		#endregion
 
-		#region Where
+		#region Filter
 
 		if (isCollectionQuery || HasAny<FilterAttribute, FilterActionFilter, FilterEndpointFilter>(descriptor))
 		{
@@ -74,7 +74,7 @@ public sealed class CrudOperationFilter(IServiceProvider serviceProvider, IOptio
 
 		#endregion
 		
-		#region OrderBy
+		#region Sorting
 
 		if (isCollectionQuery || HasAny<SortAttribute, SortingActionFilter, SortingEndpointFilter>(descriptor))
 		{

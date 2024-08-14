@@ -20,97 +20,41 @@ public static class ResourceQueryExtensions
 		return query;
 	}
 
-	#region Sorting
+    public static void Parse<T>(this ResourceQuery query, StringValues value, CrudOptions options) => query.Parse(typeof(T), value, options);
 
-	private static readonly char[] Space = [' '];
+    public static void Parse(this ResourceQuery query, Type type, StringValues value, CrudOptions options)
+    {
+        var queryString = value.AsQueryCollection();
 
-	public static readonly List<(string, SortDirection)> DefaultSort = [new ValueTuple<string, SortDirection>("Id", SortDirection.Ascending)];
+        Parse(query, type, queryString, options);
+    }
 
-	public static void Sort<T>(this ResourceQuery query, StringValues clauses) => query.Sort(typeof(T), clauses);
+    public static void Parse(this ResourceQuery query, Type type, IQueryCollection queryString, CrudOptions options)
+    {
+        query.ApplyProjection(type, queryString, options);
+        query.ApplyFilter(queryString, options);
+        query.ApplySorting(type, queryString, options);
+        query.ApplyPaging(queryString, options);
+        query.ApplyCount(queryString, options);
+    }
 
-	public static void Sort(this ResourceQuery query, Type type, StringValues clauses)
-	{
-		if (clauses.Count <= 0)
-			return;
+    #region Filter
 
-		foreach (var value in clauses.Where(x => !string.IsNullOrWhiteSpace(x)))
-		{
-			var tokens = value!.Split(Space, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+    public static void ApplyFilter(this ResourceQuery query, IQueryCollection value, CrudOptions options)
+    {
+        if (!value.TryGetValue(options.FilterOperator, out var clauses) || clauses.Count == 0)
+            return;
 
-			if (tokens.Length == 0)
-				continue;
+        query.Filter = clauses;
+    }
 
-			var clause = tokens[0];
-			var name = clause[(clause.IndexOf('=', StringComparison.Ordinal) + 1)..];
-			var sort = tokens.Length > 1 ? tokens[1].ToUpperInvariant() : "ASC";
-
-			var propertyPath = GetNestedPropertyPath(type, name);
-			if (propertyPath != null)
-				switch (sort)
-				{
-					case "DESC":
-						query.Sorting.Add((propertyPath.Value.Item1, propertyPath.Value.Item2,
-							SortDirection.Descending));
-						break;
-					case "ASC":
-						query.Sorting.Add((propertyPath.Value.Item1, propertyPath.Value.Item2,
-							SortDirection.Ascending));
-						break;
-					default:
-						query.Sorting.Add((propertyPath.Value.Item1, propertyPath.Value.Item2,
-							SortDirection.Ascending));
-						break;
-				}
-		}
-	}
-
-	public static void ApplyDefaultSort(this ResourceQuery query, Type type)
-	{
-		// Default sort must always run after any user-specified sorts:
-		// -------------------------------------------------------------------
-		// See: https://github.com/microsoft/api-guidelines/blob/vNext/Guidelines.md#983-additional-considerations
-		// "Stable order prerequisite: Both forms of paging depend on the collection of items having a stable order. The server
-		// MUST supplement any specified order criteria with additional sorts (typically by key) to ensure that items are always
-		// ordered consistently."
-		//
-		foreach (var (field, direction) in DefaultSort)
-		{
-			var propertyPath = GetNestedPropertyPath(type, field);
-			if (propertyPath != null && !query.Sorting.Any(x => x.Item2.Equals(propertyPath.Value.Item2, StringComparison.OrdinalIgnoreCase)))
-				query.Sorting.Add((propertyPath.Value.Item1, propertyPath.Value.Item2, direction));
-		}
-	}
-
-	private static (PropertyInfo?, string)? GetNestedPropertyPath(Type type, string propertyName)
-	{
-		PropertyInfo? property = null;
-		var currentType = type;
-		var propertyPath = new List<string>();
-
-		foreach (var part in propertyName.Split('.'))
-		{
-			property = currentType.GetProperty(part, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
-			if (property == null)
-				return null;
-
-			propertyPath.Add(property.Name);
-			currentType = property.PropertyType;
-		}
-
-		return (property, string.Join(".", propertyPath));
-	}
-
-	#endregion
+    #endregion
 
 	#region Projection
 
 	private static readonly char[] Comma = [','];
-
-    public static void Project<T>(this ResourceQuery query, string value, CrudOptions options) => Project(query, typeof(T), value, options);
-
-    public static void Project(this ResourceQuery query, Type type, string value, CrudOptions options) => query.Project(type, value.AsQueryCollection(), options);
-	
-    public static void Project(this ResourceQuery query, Type type, IQueryCollection queryString, CrudOptions options)
+    
+    public static void ApplyProjection(this ResourceQuery query, Type type, IQueryCollection queryString, CrudOptions options)
     {
         queryString.TryGetValue(options.IncludeOperator, out var include);
         queryString.TryGetValue(options.SelectOperator, out var select);
@@ -118,6 +62,8 @@ public static class ResourceQueryExtensions
 		
         query.Project(type, include, select, exclude);
     }
+
+    public static void Project<T>(this ResourceQuery query, StringValues value, CrudOptions options) => ApplyProjection(query, typeof(T), value.AsQueryCollection(), options);
 
     private static void Project(this ResourceQuery query, Type type, StringValues include, StringValues select, StringValues exclude)
     {
@@ -344,9 +290,103 @@ public static class ResourceQueryExtensions
 
 	#endregion
 
+	#region Sorting
+
+	private static readonly char[] Space = [' '];
+
+	public static readonly List<(string, SortDirection)> DefaultSort = [new ValueTuple<string, SortDirection>("Id", SortDirection.Ascending)];
+
+    public static void ApplySorting(this ResourceQuery query, Type type, IQueryCollection value, CrudOptions options)
+    {
+        query.Sorting.Clear();
+
+        if (value.TryGetValue(options.OrderByOperator, out var clauses))
+            query.Sort(type, clauses);
+
+        query.ApplyDefaultSort(type);
+    }
+
+	public static void Sort<T>(this ResourceQuery query, StringValues clauses) => query.Sort(typeof(T), clauses);
+
+	public static void Sort(this ResourceQuery query, Type type, StringValues clauses)
+	{
+		if (clauses.Count <= 0)
+			return;
+
+		foreach (var value in clauses.Where(x => !string.IsNullOrWhiteSpace(x)))
+		{
+			var tokens = value!.Split(Space, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+			if (tokens.Length == 0)
+				continue;
+
+			var clause = tokens[0];
+			var name = clause[(clause.IndexOf('=', StringComparison.Ordinal) + 1)..];
+			var sort = tokens.Length > 1 ? tokens[1].ToUpperInvariant() : "ASC";
+
+			var propertyPath = GetNestedPropertyPath(type, name);
+			if (propertyPath != null)
+				switch (sort)
+				{
+					case "DESC":
+						query.Sorting.Add((propertyPath.Value.Item1, propertyPath.Value.Item2,
+							SortDirection.Descending));
+						break;
+					case "ASC":
+						query.Sorting.Add((propertyPath.Value.Item1, propertyPath.Value.Item2,
+							SortDirection.Ascending));
+						break;
+					default:
+						query.Sorting.Add((propertyPath.Value.Item1, propertyPath.Value.Item2,
+							SortDirection.Ascending));
+						break;
+				}
+		}
+	}
+
+	public static void ApplyDefaultSort(this ResourceQuery query, Type type)
+	{
+		// Default sort must always run after any user-specified sorts:
+		// -------------------------------------------------------------------
+		// See: https://github.com/microsoft/api-guidelines/blob/vNext/Guidelines.md#983-additional-considerations
+		// "Stable order prerequisite: Both forms of paging depend on the collection of items having a stable order. The server
+		// MUST supplement any specified order criteria with additional sorts (typically by key) to ensure that items are always
+		// ordered consistently."
+		//
+		foreach (var (field, direction) in DefaultSort)
+		{
+			var propertyPath = GetNestedPropertyPath(type, field);
+			if (propertyPath != null && !query.Sorting.Any(x => x.Item2.Equals(propertyPath.Value.Item2, StringComparison.OrdinalIgnoreCase)))
+				query.Sorting.Add((propertyPath.Value.Item1, propertyPath.Value.Item2, direction));
+		}
+	}
+
+	private static (PropertyInfo?, string)? GetNestedPropertyPath(Type type, string propertyName)
+	{
+		PropertyInfo? property = null;
+		var currentType = type;
+		var propertyPath = new List<string>();
+
+		foreach (var part in propertyName.Split('.'))
+		{
+			property = currentType.GetProperty(part, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+			if (property == null)
+				return null;
+
+			propertyPath.Add(property.Name);
+			currentType = property.PropertyType;
+		}
+
+		return (property, string.Join(".", propertyPath));
+	}
+
+	#endregion
+
 	#region Paging
 
-    public static void Paging(this ResourceQuery query, string value, CrudOptions options) => query.Paging(value.AsQueryCollection(), options);
+    public static void ApplyPaging(this ResourceQuery query, IQueryCollection value, CrudOptions options) => query.Paging(value, options);
+
+    public static void Paging(this ResourceQuery query, StringValues value, CrudOptions options) => query.Paging(value.AsQueryCollection(), options);
 
     public static void Paging(this ResourceQuery query, IQueryCollection queryString, CrudOptions options)
     {
@@ -420,4 +460,26 @@ public static class ResourceQueryExtensions
 	}
 
 	#endregion
+
+    #region Count
+
+    public static void ApplyCount(this ResourceQuery query, IQueryCollection value, CrudOptions options)
+    {
+        if (!value.TryGetValue(options.CountOperator, out var clauses))
+            return;
+
+        if (clauses.Count <= 0)
+            return;
+
+        foreach (var clause in clauses.Where(x => !string.IsNullOrWhiteSpace(x)))
+        {
+            if (clause != null && (clause.Equals("true", StringComparison.OrdinalIgnoreCase) ||
+                                   int.TryParse(clause, out var countAsNumber) && countAsNumber == 1 ||
+                                   clause.Equals("yes", StringComparison.OrdinalIgnoreCase)))
+
+                query.CountTotalRows = true;
+        }
+    }
+
+    #endregion
 }

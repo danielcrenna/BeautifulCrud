@@ -10,18 +10,13 @@ internal static class HttpContextExtensions
             return;
 
         var query = context.GetResourceQuery();
-
-        query.Project(type, context.Request.Query, options);
+        query.ApplyProjection(type, context.Request.Query, options);
     }
 
     public static void ApplyFilter(this HttpContext context, CrudOptions options)
     {
         var query = context.GetResourceQuery();
-
-        if (!context.Request.Query.TryGetValue(options.FilterOperator, out var clauses) || clauses.Count == 0)
-            return;
-
-        query.Filter = clauses;
+        query.ApplyFilter(context.Request.Query, options);
     }
 
     public static void ApplySorting(this HttpContext context, Type? type, CrudOptions options)
@@ -30,39 +25,20 @@ internal static class HttpContextExtensions
             return;
 
         var query = context.GetResourceQuery();
-        query.Sorting.Clear();
-
-        if (context.Request.Query.TryGetValue(options.OrderByOperator, out var clauses))
-            query.Sort(type, clauses);
-
-        query.ApplyDefaultSort(type);
+        query.ApplySorting(type, context.Request.Query, options);
     }
 
     public static void ApplyPaging(this HttpContext context, CrudOptions options)
     {
         var query = context.GetResourceQuery();
         query.ServerUri = context.Request.GetServerUri();
-        query.Paging(context.Request.Query, options);
+        query.ApplyPaging(context.Request.Query, options);
     }
 
     public static void ApplyCount(this HttpContext context, CrudOptions options)
     {
         var query = context.GetResourceQuery();
-
-        if (!context.Request.Query.TryGetValue(options.CountOperator, out var clauses))
-            return;
-
-        if (clauses.Count <= 0)
-            return;
-
-        foreach (var clause in clauses.Where(x => !string.IsNullOrWhiteSpace(x)))
-        {
-            if (clause != null && (clause.Equals("true", StringComparison.OrdinalIgnoreCase) ||
-                                   int.TryParse(clause, out var countAsNumber) && countAsNumber == 1 ||
-                                   clause.Equals("yes", StringComparison.OrdinalIgnoreCase)))
-
-                query.CountTotalRows = true;
-        }
+        query.ApplyCount(context.Request.Query, options);
     }
 
     public static void ApplyPrefer(this HttpContext context)
