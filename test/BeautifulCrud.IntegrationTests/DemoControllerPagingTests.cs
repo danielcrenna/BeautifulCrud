@@ -1,6 +1,5 @@
 using System.Net.Http.Json;
 using Demo.Shared;
-using Newtonsoft.Json.Linq;
 using Xunit;
 
 namespace BeautifulCrud.IntegrationTests;
@@ -19,7 +18,7 @@ public class DemoControllerPagingTests
         var content = await response.Content.ReadFromJsonAsync<Many<WeatherForecast>>();
         Assert.NotNull(content);
         Assert.NotNull(content.Value);
-        Assert.True(content.Items == 50);
+        Assert.Equal(50, content.Items);
     }
 
     [Fact]
@@ -34,7 +33,7 @@ public class DemoControllerPagingTests
         var content = await response.Content.ReadFromJsonAsync<Many<WeatherForecast>>();
         Assert.NotNull(content);
         Assert.NotNull(content.Value);
-        Assert.True(content.Items == 10);
+        Assert.Equal(10, content.Items);
     }
 
     [Fact]
@@ -62,7 +61,7 @@ public class DemoControllerPagingTests
         Assert.True(secondPage.Items == 10, "Second page should have ten items");
 
         var delta = secondPage.Value.Except(firstPage.Value);
-        Assert.True(delta.Count() == 5);
+        Assert.Equal(delta.Count(), 5);
     }
 
     [Fact]
@@ -90,7 +89,7 @@ public class DemoControllerPagingTests
         Assert.True(secondPage.Items == 5, "Second page should have five items");
 
         var delta = firstPage.Value.Except(secondPage.Value);
-        Assert.True(delta.Count() == 5);
+        Assert.Equal(5, delta.Count());
     }
 
     [Fact]
