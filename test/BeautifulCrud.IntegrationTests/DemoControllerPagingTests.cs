@@ -61,7 +61,7 @@ public class DemoControllerPagingTests
         Assert.True(secondPage.Items == 10, "Second page should have ten items");
 
         var delta = secondPage.Value.Except(firstPage.Value);
-        Assert.Equal(delta.Count(), 5);
+        Assert.Equal(5, delta.Count());
     }
 
     [Fact]
