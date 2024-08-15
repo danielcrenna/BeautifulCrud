@@ -2,6 +2,11 @@
 
 namespace BeautifulCrud.AspNetCore.Attributes;
 
-public class ItemQueryAttribute : CrudFilterAttribute<ProjectActionFilter>;
+public class ItemQueryAttribute : CrudFilterAttribute<ProjectActionFilter>
+{
+    public ItemQueryAttribute() { }
 
-public class ItemQueryAttribute<T>() : CrudFilterAttribute<ProjectActionFilter>(typeof(T));
+    public ItemQueryAttribute(Type type) : base(type) { }
+}
+
+public class ItemQueryAttribute<T>() : ItemQueryAttribute(typeof(T));

@@ -2,6 +2,10 @@
 
 namespace BeautifulCrud.AspNetCore.Attributes;
 
-public class CollectionQueryAttribute : CrudFilterAttribute<CollectionQueryActionFilter>;
+public class CollectionQueryAttribute : CrudFilterAttribute<CollectionQueryActionFilter>
+{
+    public CollectionQueryAttribute() { }
+    public CollectionQueryAttribute(Type type) : base(type) { }
+}
 
-public class CollectionQueryAttribute<T>() : CrudFilterAttribute<CollectionQueryActionFilter>(typeof(T));
+public class CollectionQueryAttribute<T>() : CollectionQueryAttribute(typeof(T));
