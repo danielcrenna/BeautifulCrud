@@ -1,6 +1,5 @@
 ﻿using System.Net.Mime;
 using BeautifulCrud.AspNetCore.ActionFilters;
-using BeautifulCrud.AspNetCore.Attributes;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
@@ -29,18 +28,18 @@ public class QueryActionModelConvention : IActionModelConvention
         if (preferQueryType == null) return;
 
         action.Filters.Add(new ProducesResponseTypeAttribute(StatusCodes.Status204NoContent));
-        action.Filters.Add(new ProducesResponseTypeAttribute(StatusCodes.Status404NotFound));
+        action.Filters.Add(new ProducesResponseTypeAttribute(typeof(ProblemDetails), StatusCodes.Status404NotFound));
     }
     
     private static void TryAnnotateItemQueries(ActionModel action)
     {
-        var itemQueryType = action.ResolveType<ItemQueryAttribute>();
+        var itemQueryType = action.ResolveType<ProjectActionFilter>();
         if (itemQueryType == null) return;
 
         action.Filters.Add(new ProducesAttribute(MediaTypeNames.Application.Json, []));
         action.Filters.Add(new ConsumesAttribute(MediaTypeNames.Application.Json, []));
         action.Filters.Add(new ProducesResponseTypeAttribute(typeof(One<>).MakeGenericType(itemQueryType), StatusCodes.Status200OK));
-        action.Filters.Add(new ProducesResponseTypeAttribute(StatusCodes.Status404NotFound));
+        action.Filters.Add(new ProducesResponseTypeAttribute(typeof(ProblemDetails), StatusCodes.Status404NotFound));
 
         var preferQueryType = action.ResolveType<PreferActionFilter>();
         if (preferQueryType == null) return;

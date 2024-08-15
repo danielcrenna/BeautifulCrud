@@ -31,7 +31,7 @@ public class WeatherForecastController(IStringLocalizer<WeatherForecastControlle
         if (query.PreferMinimal)
         {
             return result.Value == null
-                ? this.NotFoundWithDetails(localizer,
+                ? this.NotFoundWithProblemDetails(localizer,
                     "Prefer: return=minimal was requested, but no results match the query.")
                 : NoContent();
         }
@@ -45,9 +45,10 @@ public class WeatherForecastController(IStringLocalizer<WeatherForecastControlle
     {
         var data = Data.AsQueryable();
         var result = await data.ToOneAsync(query, id, cancellationToken);
-        
+
         if (!result.Found)
-            return NotFound();
+            return this.NotFoundWithProblemDetails(localizer,
+                $"The resource with ID {id} was not found");
 
         if (query.PreferMinimal)
             return NoContent();

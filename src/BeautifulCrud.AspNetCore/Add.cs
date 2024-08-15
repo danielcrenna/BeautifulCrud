@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using BeautifulCrud.AspNetCore.ActionFilters;
@@ -33,6 +34,8 @@ public static class Add
 
         if (options.Features.HasFlagFast(Features.Controllers) || options.Features.HasFlagFast(Features.MinimalApis))
         {
+            Activity.DefaultIdFormat = ActivityIdFormat.W3C;
+
             services.TryAddTransient(typeof(IStringLocalizer<>), typeof(NoStringLocalizer<>));
 
             services.TryAddSingleton<Func<DateTimeOffset>>(_ => () => DateTimeOffset.Now);
@@ -76,8 +79,6 @@ public static class Add
                 c.OperationFilter<CrudOperationFilter>();
 			});
 		}
-
-        services.AddProblemDetails();
 
 		return services;
 	}

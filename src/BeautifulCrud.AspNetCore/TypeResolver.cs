@@ -74,10 +74,16 @@ internal static class TypeResolver
 
     public static Type? ResolveType<T>(this ActionModel model)
     {
+        var attribute = model.Attributes.OfType<CrudFilterAttribute<T>>().FirstOrDefault();
+        if (attribute == null)
+            return null;
+
         if (TypeCache.TryGetValue(model, out var type))
             return type;
 
-        if (model.Controller.ControllerType.IsAssignableTo(typeof(IHasType)))
+        type = attribute.Type;
+
+        if (type == null && model.Controller.ControllerType.IsAssignableTo(typeof(IHasType)))
         {
             var instance = Activator.CreateInstance(model.Controller.ControllerType);
             if (instance != null)
@@ -86,14 +92,7 @@ internal static class TypeResolver
                 type = typed.Type;
             }
         }
-
-        if (type == null)
-        {
-            var attribute = model.Attributes.OfType<CrudFilterAttribute<T>>().FirstOrDefault();
-            if (attribute != null)
-                type = attribute.Type;
-        }
-
+        
         if (type == null)
         {
             var returnType = model.ActionMethod.ReturnType;
