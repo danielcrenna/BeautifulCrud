@@ -1,7 +1,10 @@
 using System.Text.Json.Serialization;
 using BeautifulCrud;
 using BeautifulCrud.AspNetCore;
+using BeautifulCrud.AspNetCore.Extensions;
 using Demo.Shared;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateSlimBuilder(args);
@@ -31,11 +34,47 @@ var data = Enumerable.Range(1, 50).Select(index =>
     });
 
 app.MapGet("/weatherforecast",
-        async (ResourceQuery query, IOptionsSnapshot<CrudOptions> options, CancellationToken cancellationToken) =>
-            await data.AsQueryable().ToManyAsync(query, options.Value, cancellationToken))
-    .CollectionQuery()
+        async (HttpContext context, ResourceQuery query, [FromServices] IStringLocalizer<WeatherForecast> localizer, IOptionsSnapshot<CrudOptions> options, CancellationToken cancellationToken) =>
+        {
+            var result = await data
+                .AsQueryable()
+                .ToManyAsync(query, options.Value, cancellationToken);
+
+            if (!query.PreferMinimal)
+                return Results.Ok(result);
+
+            if (result.Value != null)
+                return Results.NoContent();
+
+            return Results.Problem(context.NotFoundWithProblemDetails(localizer,
+                "Prefer: return=minimal was requested, but no results match the query."));
+        })
+    .CollectionQuery<WeatherForecast>()
     .Prefer()
-    .WithName("GetWeatherForecast");
+    .WithName("GetWeatherForecast")
+    ;
+
+app.MapGet("/weatherforecast/{id:guid}",
+        async (HttpContext context, Guid id, ResourceQuery query,
+            [FromServices] IStringLocalizer<WeatherForecast> localizer, CancellationToken cancellationToken) =>
+        {
+            var result = await data.AsQueryable().ToOneAsync(query, id, cancellationToken);
+
+            if (!result.Found)
+            {
+                return Results.Problem(context.NotFoundWithProblemDetails(localizer,
+                    $"The resource with ID {id} was not found"));
+            }
+
+            if (!query.PreferMinimal)
+                return Results.Ok(result);
+
+            return Results.NoContent();
+        })
+    .ItemQuery<WeatherForecast>()
+    .Prefer()
+    .WithName("GetWeatherForecastById")
+    ;
 
 app.Run();
 
