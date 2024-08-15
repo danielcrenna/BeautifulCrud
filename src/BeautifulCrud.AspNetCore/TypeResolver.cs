@@ -2,6 +2,7 @@
 using System.Reflection;
 using BeautifulCrud.AspNetCore.Attributes;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Routing;
@@ -12,9 +13,11 @@ internal static class TypeResolver
 {
 	private static readonly ConcurrentDictionary<object, Type?> TypeCache = new();
 
-    public static Type? LookupType(this ControllerActionDescriptor actionDescriptor) => TypeCache.GetValueOrDefault(actionDescriptor);
+    public static Type? LookupType(this ControllerActionDescriptor descriptor) => TypeCache.GetValueOrDefault(descriptor);
 
-    public static Type? LookupType(this Endpoint endpoint) => TypeCache.GetValueOrDefault(GenerateEndpointKey(endpoint));
+    public static Type? LookupType(this Endpoint endpoint) => TypeCache.GetValueOrDefault(GenerateEndpointCacheKey(endpoint));
+
+    public static Type? LookupType(this ActionModel model) => TypeCache.GetValueOrDefault(model);
 
     public static Type? ResolveType(this EndpointFilterInvocationContext context)
 	{
@@ -30,14 +33,12 @@ internal static class TypeResolver
 			var returnType = metadata.ReturnType;
 
 			if (typeof(Task).IsAssignableFrom(returnType))
-			{
-				returnType = returnType.IsGenericType ? returnType.GetGenericArguments()[0] : typeof(void);
-			}
+                returnType = returnType.IsGenericType ? returnType.GetGenericArguments()[0] : typeof(void);
 
 			type = returnType.IsGenericType ? returnType.GetGenericArguments()[0] : returnType;
 		}
 
-		TypeCache.TryAdd(GenerateEndpointKey(endpoint), type);
+		TypeCache.TryAdd(GenerateEndpointCacheKey(endpoint), type);
 		return type;
 	}
 
@@ -48,31 +49,67 @@ internal static class TypeResolver
 		if (TypeCache.TryGetValue(actionDescriptor, out var type))
 			return type;
 
-		var attribute = actionDescriptor.EndpointMetadata.OfType<CrudFilterAttribute<T>>().FirstOrDefault();
-		if (attribute != null)
-			type = attribute.Type;
+        if (type == null && context.Controller is IHasType typed)
+            type = typed.Type;
+
+		if (type == null)
+        {
+            var attribute = actionDescriptor.EndpointMetadata.OfType<CrudFilterAttribute<T>>().FirstOrDefault();
+            type = attribute?.Type;
+        }
 
 		if (type == null && actionDescriptor is ControllerActionDescriptor controllerActionDescriptor)
 		{
 			var returnType = controllerActionDescriptor.MethodInfo.ReturnType;
 
 			if (typeof(Task).IsAssignableFrom(returnType))
-			{
-				returnType = returnType.IsGenericType ? returnType.GetGenericArguments()[0] : typeof(void);
-			}
+                returnType = returnType.IsGenericType ? returnType.GetGenericArguments()[0] : typeof(void);
 
 			type = returnType.IsGenericType ? returnType.GetGenericArguments()[0] : returnType;
 		}
-
-		if (type == null && context.Controller is IHasType typed)
-			type = typed.Type;
-
+        
 		TypeCache.TryAdd(actionDescriptor, type);
 		return type;
 	}
 
+    public static Type? ResolveType<T>(this ActionModel model)
+    {
+        if (TypeCache.TryGetValue(model, out var type))
+            return type;
+
+        if (model.Controller.ControllerType.IsAssignableTo(typeof(IHasType)))
+        {
+            var instance = Activator.CreateInstance(model.Controller.ControllerType);
+            if (instance != null)
+            {
+                var typed = (IHasType) instance;
+                type = typed.Type;
+            }
+        }
+
+        if (type == null)
+        {
+            var attribute = model.Attributes.OfType<CrudFilterAttribute<T>>().FirstOrDefault();
+            if (attribute != null)
+                type = attribute.Type;
+        }
+
+        if (type == null)
+        {
+            var returnType = model.ActionMethod.ReturnType;
+
+            if (typeof(Task).IsAssignableFrom(returnType))
+                returnType = returnType.IsGenericType ? returnType.GetGenericArguments()[0] : typeof(void);
+
+            type = returnType.IsGenericType ? returnType.GetGenericArguments()[0] : returnType;
+        }
+        
+        TypeCache.TryAdd(model, type);
+        return type;
+    }
+
 	/// <summary> Endpoint instances are re-generated, and can't be used as a cache key </summary>
-    private static string GenerateEndpointKey(Endpoint endpoint)
+    private static string GenerateEndpointCacheKey(Endpoint endpoint)
     {
         if (endpoint is not RouteEndpoint route)
             return endpoint.DisplayName ?? "UnknownEndpoint";

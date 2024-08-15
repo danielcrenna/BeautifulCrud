@@ -67,13 +67,17 @@ public static class ResourceQueryExtensions
 
     private static void Project(this ResourceQuery query, Type type, StringValues include, StringValues select, StringValues exclude)
     {
-        var topLevelProperties = type.GetProperties()
+        var topLevelFields = type.GetProperties()
             .Where(p => p.CanWrite)
             .ToDictionary(p => p.Name, p => p, StringComparer.OrdinalIgnoreCase);
 
-        if (include.Count > 0)
+        if (select.Count > 0)
         {
-            var inclusions = topLevelProperties.Values
+            ProjectIncluded(type, select, query.Projection);
+        }
+        else if (include.Count > 0)
+        {
+            var inclusions = topLevelFields.Values
                 .Select(property => new ProjectionPath
                 {
                     Name = property.Name,
@@ -84,13 +88,9 @@ public static class ResourceQueryExtensions
             query.Projection.AddRange(inclusions);
             ProjectIncluded(type, include, query.Projection);
         }
-        else if (select.Count > 0)
-        {
-            ProjectIncluded(type, select, query.Projection);
-        }
         else if (exclude.Count > 0)
         {
-            ProjectExcluded(topLevelProperties, type, exclude, query.Projection);
+            ProjectExcluded(topLevelFields, type, exclude, query.Projection);
         }
     }
 

@@ -21,10 +21,10 @@ public sealed class CrudOperationFilter(IServiceProvider serviceProvider, IOptio
 	{
 		var descriptor = context.ApiDescription.ActionDescriptor;
 
-		MaybeAppendQueryOperators(operation, descriptor);
+		MaybeAppendQueryOperators(context, operation, descriptor);
 	}
 	
-	private void MaybeAppendQueryOperators(OpenApiOperation operation, ActionDescriptor descriptor)
+	private void MaybeAppendQueryOperators(OperationFilterContext context, OpenApiOperation operation, ActionDescriptor descriptor)
 	{
         var isCollectionQuery = Has<CollectionQueryAttribute>(descriptor);
 
@@ -33,28 +33,28 @@ public sealed class CrudOperationFilter(IServiceProvider serviceProvider, IOptio
         if (isCollectionQuery || HasAny<ItemQueryAttribute, ProjectActionFilter, ProjectEndpointFilter>(descriptor))
 		{
             TryAdd(operation, new OpenApiParameter
-			{
-				Name = options.CurrentValue.SelectOperator,
-				In = ParameterLocation.Query,
-				Description = _localizer.GetString("Only include the specified fields in the response body"),
-				Example = GetTopLevelPropertyNames(operation)
-			});
-
-            TryAdd(operation, new OpenApiParameter
-			{
-				Name = options.CurrentValue.IncludeOperator,
-				In = ParameterLocation.Query,
-				Description = _localizer.GetString("Include the specified fields in the response body, in addition to top-level properties"),
-				Example = GetTopLevelPropertyNames(operation)
-			});
-
-            TryAdd(operation, new OpenApiParameter
-			{
-				Name = options.CurrentValue.ExcludeOperator,
+            {
+                Name = options.CurrentValue.SelectOperator,
                 In = ParameterLocation.Query,
-				Description = _localizer.GetString("Omit the specified fields in the response body"),
-				Example = new OpenApiString("")
-			});
+                Description = _localizer.GetString("Only include the specified fields in the response body. If this is specified, include and exclude are ignored."),
+                Examples = GetProjectionExamples(options.CurrentValue.SelectOperator, context, operation)
+            });
+
+            TryAdd(operation, new OpenApiParameter
+            {
+                Name = options.CurrentValue.IncludeOperator,
+                In = ParameterLocation.Query,
+                Description = _localizer.GetString("Include the specified fields in the response body, in addition to top-level fields. If this is specified, exclude is ignored."),
+                Examples = GetProjectionExamples(options.CurrentValue.IncludeOperator, context, operation)
+            });
+
+            TryAdd(operation, new OpenApiParameter
+            {
+                Name = options.CurrentValue.ExcludeOperator,
+                In = ParameterLocation.Query,
+                Description = _localizer.GetString("Omits the specified fields in the response body"),
+                Examples = GetProjectionExamples(options.CurrentValue.ExcludeOperator, context, operation)
+            });
 		}
 
 		#endregion
@@ -67,7 +67,7 @@ public sealed class CrudOperationFilter(IServiceProvider serviceProvider, IOptio
 			{
 				Name = options.CurrentValue.FilterOperator,
 				In = ParameterLocation.Query,
-				Description = _localizer.GetString("Apply a property-level filter to the query"),
+				Description = _localizer.GetString("Apply a field-level filter to the query"),
 				Example = new OpenApiString("")
 			});
 		}
@@ -147,6 +147,22 @@ public sealed class CrudOperationFilter(IServiceProvider serviceProvider, IOptio
         }
 	}
 
+    private static Dictionary<string, OpenApiExample> GetProjectionExamples(string @operator, OperationFilterContext context, OpenApiOperation operation)
+    {
+        var fieldNames = ResolveFieldNames(operation, context.SchemaRepository)
+            .ToList();
+
+        var examples = new Dictionary<string, OpenApiExample>
+        {
+            { @operator, new OpenApiExample { Value = new OpenApiString("")} }
+        };
+
+        foreach (var fieldName in fieldNames)
+            examples.Add(fieldName.Value, new OpenApiExample { Value = fieldName });
+
+        return examples;
+    }
+
     private static void TryAdd(OpenApiOperation operation, OpenApiParameter parameter)
     {
 		if(operation.Parameters.Any(x => x.Name == parameter.Name))
@@ -167,14 +183,53 @@ public sealed class CrudOperationFilter(IServiceProvider serviceProvider, IOptio
 		       ;
 	}
 
-	private static OpenApiString GetTopLevelPropertyNames(OpenApiOperation operation)
+	private static IEnumerable<OpenApiString> ResolveFieldNames(OpenApiOperation operation, SchemaRepository schemas)
 	{
-		var responseType = operation.Responses.Values.FirstOrDefault()?.Content?.Values.FirstOrDefault()?.Schema;
-		if (responseType == null)
-			return new OpenApiString("");
+        var responses = operation.Responses.Values;
+        var mediaTypes = responses.FirstOrDefault()?.Content;
 
-		var fieldNames = responseType.Properties.Keys.ToList();
-		var example = string.Join(", ", fieldNames);
-		return new OpenApiString(example);
-	}
+        var schema = mediaTypes?.Values.FirstOrDefault()?.Schema;
+        if (schema == null)
+            return [];
+
+        var fieldNames = ResolveFieldNames(schema, schemas);
+        var examples = fieldNames.Select(x => new OpenApiString(x));
+        return examples;
+    }
+
+    public static List<string> ResolveFieldNames(OpenApiSchema schema, SchemaRepository schemas)
+    {
+        while (true)
+        {
+            var fieldNames = new List<string>();
+
+            if (schema.Items != null)
+            {
+                schema = schema.Items;
+                continue;
+            }
+
+            if (schema.Reference != null)
+            {
+                if (!schemas.Schemas.TryGetValue(schema.Reference.Id, out var reference))
+                    return fieldNames;
+
+                if (reference.Properties.TryGetValue("value", out var value) && value != null)
+                {
+                    schema = value;
+                    continue;
+                }
+
+                foreach (var field in reference.Properties)
+                    fieldNames.Add(field.Key);
+            }
+            else
+            {
+                foreach (var field in schema.Properties)
+                    fieldNames.Add(field.Key);
+            }
+
+            return fieldNames;
+        }
+    }
 }

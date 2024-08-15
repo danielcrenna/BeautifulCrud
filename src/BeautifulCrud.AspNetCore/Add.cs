@@ -2,6 +2,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using BeautifulCrud.AspNetCore.ActionFilters;
+using BeautifulCrud.AspNetCore.Conventions;
 using BeautifulCrud.AspNetCore.Extensions;
 using BeautifulCrud.AspNetCore.Models;
 using BeautifulCrud.AspNetCore.OpenApi;
@@ -47,6 +48,8 @@ public static class Add
 			var builder = services.AddMvcCore(o =>
 			{
                 o.ModelBinderProviders.Insert(0, new ResourceQueryModelBinderProvider());
+
+                o.Conventions.Add(new QueryActionModelConvention());
 			});
 
 			builder.AddJsonOptions(o => { SetJsonOptions(o.JsonSerializerOptions); });
