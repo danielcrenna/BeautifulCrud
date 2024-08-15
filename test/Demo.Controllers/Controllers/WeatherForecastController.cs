@@ -1,7 +1,9 @@
 using BeautifulCrud;
 using BeautifulCrud.AspNetCore.Attributes;
+using BeautifulCrud.AspNetCore.Extensions;
 using Demo.Shared;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
 
 namespace Demo.Controllers.Controllers;
@@ -10,7 +12,7 @@ namespace Demo.Controllers.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class WeatherForecastController(IOptionsSnapshot<CrudOptions> options) : ControllerBase
+public class WeatherForecastController(IStringLocalizer<WeatherForecastController> localizer, IOptionsSnapshot<CrudOptions> options) : ControllerBase
 {
     private static readonly string[] Summaries =
     [
@@ -18,23 +20,39 @@ public class WeatherForecastController(IOptionsSnapshot<CrudOptions> options) : 
     ];
 
     private static readonly List<WeatherForecast> Data = CreateData();
-    
+
     [HttpGet(Name = "GetWeatherForecast")]
-	[CollectionQuery, Prefer]
-    public async Task<Many<WeatherForecast>> Get(ResourceQuery query, CancellationToken cancellationToken)
+    [CollectionQuery<WeatherForecast>, Prefer]
+    public async Task<IActionResult> Get(ResourceQuery query, CancellationToken cancellationToken)
     {
-	    var data = Data.AsQueryable();
-	    var result = await data.ToManyAsync(query, options.Value, cancellationToken);
-        return result;
+        var data = Data.AsQueryable();
+        var result = await data.ToManyAsync(query, options.Value, cancellationToken);
+
+        if (query.PreferMinimal)
+        {
+            return result.Value == null
+                ? this.NotFoundWithDetails(localizer,
+                    "Prefer: return=minimal was requested, but no results match the query.")
+                : NoContent();
+        }
+
+        return Ok(result);
     }
 
     [HttpGet("{id:guid}", Name = "GetWeatherForecastById")]
-    [ItemQuery, Prefer]
-    public async Task<One<WeatherForecast>> GetById(Guid id, ResourceQuery query, CancellationToken cancellationToken)
+    [ItemQuery<WeatherForecast>, Prefer]
+    public async Task<IActionResult> GetById(Guid id, ResourceQuery query, CancellationToken cancellationToken)
     {
         var data = Data.AsQueryable();
         var result = await data.ToOneAsync(query, id, cancellationToken);
-        return result;
+        
+        if (!result.Found)
+            return NotFound();
+
+        if (query.PreferMinimal)
+            return NoContent();
+
+        return Ok(result);
     }
 
     private static List<WeatherForecast> CreateData()

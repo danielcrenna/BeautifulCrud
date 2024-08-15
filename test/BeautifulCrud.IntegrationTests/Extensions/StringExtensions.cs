@@ -1,4 +1,4 @@
-namespace BeautifulCrud.IntegrationTests;
+namespace BeautifulCrud.IntegrationTests.Extensions;
 
 internal static class StringExtensions
 {

@@ -11,10 +11,11 @@ using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Localization;
 
 namespace BeautifulCrud.AspNetCore;
 
-public static class ServiceCollectionExtensions
+public static class Add
 {
     [ExcludeFromCodeCoverage]
     public static IServiceCollection AddBeautifulCrud(this IServiceCollection services, IConfiguration configuration) => services.AddBeautifulCrud(configuration.Bind);
@@ -31,6 +32,8 @@ public static class ServiceCollectionExtensions
 
         if (options.Features.HasFlagFast(Features.Controllers) || options.Features.HasFlagFast(Features.MinimalApis))
         {
+            services.TryAddTransient(typeof(IStringLocalizer<>), typeof(NoStringLocalizer<>));
+
             services.TryAddSingleton<Func<DateTimeOffset>>(_ => () => DateTimeOffset.Now);
             services.TryAddSingleton<IQueryHashEncoder, Base64QueryHashEncoder>();
             services.TryAddSingleton<IResourceQuerySerializer, BinaryResourceQuerySerializer>();

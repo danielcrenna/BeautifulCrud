@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using BeautifulCrud.IntegrationTests.Extensions;
 using Demo.Shared;
 using Xunit;
 
@@ -7,13 +8,13 @@ namespace BeautifulCrud.IntegrationTests;
 public class DemoControllerProjectionTests
 {
     [Fact]
-    public async Task SelectIsUsedWhenPresent_GetById()
+    public async Task SelectIsUsedWhenPresentGetById()
     {
         var factory = TestFactory.WithOptions<Program>(o => { o.DefaultPageSize = 1; });
         var client = factory.CreateClient();
         
         var firstPageResponse = await client.GetAsync("/weatherforecast");
-        firstPageResponse.EnsureSuccessStatusCode();
+        await firstPageResponse.AssertSuccessStatusCodeAsync();
         
         var firstPage = await firstPageResponse.Content.ReadFromJsonAsync<Many<WeatherForecast>>();
         Assert.NotNull(firstPage);
@@ -23,7 +24,7 @@ public class DemoControllerProjectionTests
         var first = firstPage.Value.First();
         
         var getByIdResponse = await client.GetAsync($"/weatherforecast/{first.Id}/?$select=Date");
-        getByIdResponse.EnsureSuccessStatusCode();
+        await getByIdResponse.AssertSuccessStatusCodeAsync();
 
         var getByIdContent = await getByIdResponse.Content.ReadAsStringAsync();
         Assert.True(getByIdContent.ContainsAny(["date"]));
@@ -39,13 +40,13 @@ public class DemoControllerProjectionTests
     }
 
     [Fact]
-    public async Task SelectIsUsedWhenPresent_WithoutCount()
+    public async Task SelectIsUsedWhenPresentWithoutCount()
     {
         await SelectIsUsedWhenPresent("/weatherforecast/?$count=false");
     }
 
     [Fact]
-    public async Task SelectIsUsedWhenPresent_WithCount()
+    public async Task SelectIsUsedWhenPresentWithCount()
     {
         await SelectIsUsedWhenPresent("/weatherforecast/?$count=true");
     }
@@ -56,13 +57,13 @@ public class DemoControllerProjectionTests
         var client = factory.CreateClient();
 
         var firstPageResponse = await client.GetAsync(url);
-        firstPageResponse.EnsureSuccessStatusCode();
+        await firstPageResponse.AssertSuccessStatusCodeAsync();
 
         var firstPageContent = await firstPageResponse.Content.ReadAsStringAsync();
         Assert.True(firstPageContent.ContainsAny(["date", "summary", "id", "temperatureC", "temperatureF"]));
         
         var secondPageResponse = await client.GetAsync($"{url}&$select=Date");
-        secondPageResponse.EnsureSuccessStatusCode();
+        await secondPageResponse.AssertSuccessStatusCodeAsync();
 
         var secondPageContent = await secondPageResponse.Content.ReadAsStringAsync();
         Assert.True(secondPageContent.ContainsAny(["date"]));

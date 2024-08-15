@@ -55,7 +55,7 @@ public static class ResourceQueryExtensions
 	private static readonly char[] Comma = [','];
     
     public static void ApplyProjection(this ResourceQuery query, Type type, IQueryCollection queryString, CrudOptions options)
-    {
+    { 
         queryString.TryGetValue(options.IncludeOperator, out var include);
         queryString.TryGetValue(options.SelectOperator, out var select);
         queryString.TryGetValue(options.ExcludeOperator, out var exclude);

@@ -21,8 +21,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseBeautifulCrud();
 app.UseAuthorization();
+app.UseBeautifulCrud();
 app.MapControllers();
 app.Run();
 

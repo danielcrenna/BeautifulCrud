@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using BeautifulCrud.IntegrationTests.Extensions;
 using Demo.Shared;
 using Xunit;
 
@@ -13,7 +14,7 @@ public class DemoControllerCountTests
         var client = factory.CreateClient();
         
         var response = await client.GetAsync("/weatherforecast/?$count=true");
-        response.EnsureSuccessStatusCode();
+        await response.AssertSuccessStatusCodeAsync();
 
         var content = await response.Content.ReadFromJsonAsync<CountMany<WeatherForecast>>();
         Assert.NotNull(content);

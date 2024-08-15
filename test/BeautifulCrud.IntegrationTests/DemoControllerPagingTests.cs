@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using BeautifulCrud.IntegrationTests.Extensions;
 using Demo.Shared;
 using Xunit;
 
@@ -13,7 +14,7 @@ public class DemoControllerPagingTests
         var client = factory.CreateClient();
         
         var response = await client.GetAsync("/weatherforecast/?$maxpagesize=50");
-        response.EnsureSuccessStatusCode();
+        await response.AssertSuccessStatusCodeAsync();
 
         var content = await response.Content.ReadFromJsonAsync<Many<WeatherForecast>>();
         Assert.NotNull(content);
@@ -28,7 +29,7 @@ public class DemoControllerPagingTests
         var client = factory.CreateClient();
         
         var response = await client.GetAsync("/weatherforecast/?$maxpagesize=20");
-        response.EnsureSuccessStatusCode();
+        await response.AssertSuccessStatusCodeAsync();
 
         var content = await response.Content.ReadFromJsonAsync<Many<WeatherForecast>>();
         Assert.NotNull(content);
@@ -43,7 +44,7 @@ public class DemoControllerPagingTests
         var client = factory.CreateClient();
 
         var firstPageResponse = await client.GetAsync("/weatherforecast");
-        firstPageResponse.EnsureSuccessStatusCode();
+        await firstPageResponse.AssertSuccessStatusCodeAsync();
 
         var firstPage = await firstPageResponse.Content.ReadFromJsonAsync<Many<WeatherForecast>>();
         Assert.NotNull(firstPage);
@@ -52,7 +53,7 @@ public class DemoControllerPagingTests
         Assert.True(firstPage.Items == 10, "First page should have ten items");
 
         var secondPageResponse = await client.GetAsync("/weatherforecast/?$skip=5");
-        secondPageResponse.EnsureSuccessStatusCode();
+        await secondPageResponse.AssertSuccessStatusCodeAsync();
 
         var secondPage = await secondPageResponse.Content.ReadFromJsonAsync<Many<WeatherForecast>>();
         Assert.NotNull(secondPage);
@@ -71,7 +72,7 @@ public class DemoControllerPagingTests
         var client = factory.CreateClient();
 
         var firstPageResponse = await client.GetAsync("/weatherforecast");
-        firstPageResponse.EnsureSuccessStatusCode();
+        await firstPageResponse.AssertSuccessStatusCodeAsync();
 
         var firstPage = await firstPageResponse.Content.ReadFromJsonAsync<Many<WeatherForecast>>();
         Assert.NotNull(firstPage);
@@ -80,7 +81,7 @@ public class DemoControllerPagingTests
         Assert.True(firstPage.Items == 10, "First page should have ten items");
 
         var secondPageResponse = await client.GetAsync("/weatherforecast/?$top=5");
-        secondPageResponse.EnsureSuccessStatusCode();
+        await secondPageResponse.AssertSuccessStatusCodeAsync();
 
         var secondPage = await secondPageResponse.Content.ReadFromJsonAsync<Many<WeatherForecast>>();
         Assert.NotNull(secondPage);
@@ -99,7 +100,7 @@ public class DemoControllerPagingTests
         var client = factory.CreateClient();
 
         var response = await client.GetAsync("/weatherforecast/?$top=15");
-        response.EnsureSuccessStatusCode();
+        await response.AssertSuccessStatusCodeAsync();
 
         var page = await response.Content.ReadFromJsonAsync<Many<WeatherForecast>>();
         Assert.NotNull(page);
@@ -119,7 +120,7 @@ public class DemoControllerPagingTests
         string nextLink;
         {
             var response = await client.GetAsync("/weatherforecast");
-            response.EnsureSuccessStatusCode();
+            await response.AssertSuccessStatusCodeAsync();
 
             var page = await response.Content.ReadFromJsonAsync<Many<WeatherForecast>>();
             Assert.NotNull(page);
@@ -139,7 +140,7 @@ public class DemoControllerPagingTests
         for (var i = 0; i < 4; i++)
         {
             var response = await client.GetAsync(nextLink);
-            response.EnsureSuccessStatusCode();
+            await response.AssertSuccessStatusCodeAsync();
 
             var page = await response.Content.ReadFromJsonAsync<Many<WeatherForecast>>();
             Assert.NotNull(page);

@@ -10,6 +10,11 @@ public static class RouteHandlerBuilderExtensions
 	{
 		return builder.Project().Filter().Sort().Paging().Count();
 	}
+
+    public static RouteHandlerBuilder ItemQuery(this RouteHandlerBuilder builder)
+    {
+        return builder.Project();
+    }
 	
 	public static RouteHandlerBuilder Project(this RouteHandlerBuilder builder)
 	{

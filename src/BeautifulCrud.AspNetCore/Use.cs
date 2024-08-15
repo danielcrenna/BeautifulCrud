@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Builder;
 
 namespace BeautifulCrud.AspNetCore;
 
-public static class WebApplicationExtensions
+public static class Use
 {
     public static WebApplication UseBeautifulCrud(this WebApplication app)
     {

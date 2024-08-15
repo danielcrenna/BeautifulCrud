@@ -10,8 +10,6 @@ public sealed class PreferEndpointFilter : IEndpointFilter
     {
         context.HttpContext.ApplyPrefer();
         var result = await context.ShapePrefer(next);
-        if (result == null)
-            return new TrulyEmptyResult();
-        return result;
+        return result ?? new TrulyEmptyResult();
     }
 }

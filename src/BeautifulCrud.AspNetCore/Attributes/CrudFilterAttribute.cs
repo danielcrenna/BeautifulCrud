@@ -6,8 +6,8 @@ public abstract class CrudFilterAttribute<TActionFilter> : ServiceFilterAttribut
 {
 	public Type? Type { get; }
 
-	protected CrudFilterAttribute(Type type) : base(type)
-	{
+	protected CrudFilterAttribute(Type type) : base(typeof(TActionFilter))
+	{ 
 		Type = type;
 		IsReusable = true;
 	}
