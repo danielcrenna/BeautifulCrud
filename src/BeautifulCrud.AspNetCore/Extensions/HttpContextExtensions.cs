@@ -45,7 +45,7 @@ public static class HttpContextExtensions
     public static void ApplyProjection(this HttpContext context, Type? type, CrudOptions options)
     {
         if (type == null)
-            return;
+            return; 
 
         var query = context.GetResourceQuery();
         query.ApplyProjection(type, context.Request.Query, options);

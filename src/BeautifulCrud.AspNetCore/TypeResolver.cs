@@ -36,7 +36,22 @@ internal static class TypeResolver
                 returnType = returnType.IsGenericType ? returnType.GetGenericArguments()[0] : typeof(void);
 
 			type = returnType.IsGenericType ? returnType.GetGenericArguments()[0] : returnType;
-		}
+        }
+
+        if (type == typeof(IResult))
+        {
+            foreach (var metadata in endpoint.Metadata.OfType<ProducesResponseTypeMetadata>())
+            {
+                var returnType = metadata.Type;
+                if (returnType is not { IsGenericType: true })
+                    continue;
+
+                type = returnType.GetGenericArguments()[0];
+            }
+        }
+
+        if (type == null)
+            return null;
 
 		TypeCache.TryAdd(GenerateEndpointCacheKey(endpoint), type);
 		return type;

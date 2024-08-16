@@ -3,6 +3,7 @@ using System.Dynamic;
 using System.Reflection;
 using BeautifulCrud.Extensions;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Extensions.Primitives;
 
 namespace BeautifulCrud;
@@ -190,16 +191,25 @@ public static class ResourceQueryExtensions
     }
 
 	public static object Project(this ResourceQuery query, object instance)
-	{
-		var type = instance.GetType();
-		
+    {
+        return ProjectType(query, instance, instance.GetType());
+    }
+
+    private static object ProjectType(ResourceQuery query, object instance, Type type)
+    {
         switch (type.IsGenericType)
-		{
-			case true when type.GetGenericTypeDefinition() == typeof(Many<>):
+        {
+            case true when type.GetGenericTypeDefinition() == typeof(Ok<>):
+            {
+                var value = type.GetProperty(nameof(Ok<object>.Value))!;
+                instance = value.GetValue(instance)!;
+                return ProjectType(query, instance, type.GetGenericArguments()[0]);
+            }
+            case true when type.GetGenericTypeDefinition() == typeof(Many<>):
             {
                 return ProjectMany(query, instance, type);
             }
-			case true when type.GetGenericTypeDefinition() == typeof(CountMany<>):
+            case true when type.GetGenericTypeDefinition() == typeof(CountMany<>):
             {
                 return ProjectCountMany(query, instance, type);
             }
@@ -207,19 +217,24 @@ public static class ResourceQueryExtensions
             {
                 return ProjectOne(query, instance, type);
             }
-			default:
-			{
-				if (instance is not IEnumerable<object> enumerable)
-					return Project(instance, query.Projection);
+            default:
+            {
+                return ProjectDefault();
+            }
+        }
 
-				var items = new List<object>();
-				foreach (var item in enumerable)
-					items.Add(Project(item, query.Projection));
+        object ProjectDefault()
+        {
+            if (instance is not IEnumerable<object> enumerable)
+                return Project(instance, query.Projection);
 
-				return items;
-			}
-		}
-	}
+            var items = new List<object>();
+            foreach (var item in enumerable)
+                items.Add(Project(item, query.Projection));
+
+            return items;
+        }
+    }
 
     private static One<object> ProjectOne(ResourceQuery query, object instance, Type type)
     {
@@ -249,7 +264,7 @@ public static class ResourceQueryExtensions
 
         return new CountMany<object>(items, maxItems.GetValueOrDefault(), query.NextLink, query.DeltaLink);
     }
-
+    
     private static Many<object> ProjectMany(ResourceQuery query, object instance, Type type)
     {
         var valueProperty = type.GetProperty(nameof(Many<object>.Value));
@@ -263,7 +278,7 @@ public static class ResourceQueryExtensions
     }
 
     private static object Project(object instance, List<ProjectionPath> paths)
-	{
+	 {
 		var type = instance.GetType();
 
 		IDictionary<string, object?> expando = new ExpandoObject();
